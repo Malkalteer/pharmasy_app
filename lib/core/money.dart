@@ -45,9 +45,9 @@ double usdToSyp(double usd, double rate, RoundingConfig rounding) =>
 double sypToUsd(double syp, double rate) =>
     rate <= 0 ? 0 : roundTo(syp / rate, 6);
 
-final _sypFmt = NumberFormat('#,##0.##', 'en');
-final _usdFmt = NumberFormat('#,##0.00##', 'en');
-final _qtyFmt = NumberFormat('#,##0.##', 'en');
+final _sypFmt = NumberFormat('#,##0.##', 'en_US');
+final _usdFmt = NumberFormat('#,##0.00##', 'en_US');
+final _qtyFmt = NumberFormat('#,##0.##', 'en_US');
 
 String fmtSyp(num v) => '${_sypFmt.format(v)} ل.س';
 String fmtSypPlain(num v) => _sypFmt.format(v);
@@ -55,9 +55,9 @@ String fmtUsd(num v) => '\$${_usdFmt.format(v)}';
 String fmtUsdPlain(num v) => _usdFmt.format(v);
 String fmtQty(num v) => _qtyFmt.format(v);
 
-final _dateFmt = DateFormat('yyyy/MM/dd', 'en');
-final _dateTimeFmt = DateFormat('yyyy/MM/dd HH:mm', 'en');
-final _monthFmt = DateFormat('yyyy/MM', 'en');
+final _dateFmt = DateFormat('yyyy/MM/dd', 'en_US');
+final _dateTimeFmt = DateFormat('yyyy/MM/dd HH:mm', 'en_US');
+final _monthFmt = DateFormat('yyyy/MM', 'en_US');
 
 String fmtDate(DateTime? d) => d == null ? '-' : _dateFmt.format(d);
 String fmtDateTime(DateTime? d) => d == null ? '-' : _dateTimeFmt.format(d);
