@@ -35,12 +35,7 @@ class MachineId {
           if (_isUseful(v)) parts.add(v);
         }
         if (parts.isEmpty) {
-          final g = await Process.run('reg', [
-            'query',
-            r'HKLM\SOFTWARE\Microsoft\Cryptography',
-            '/v',
-            'MachineGuid',
-          ]);
+          final g = await Process.run('reg', ['query', r'HKLM\SOFTWARE\Microsoft\Cryptography', '/v', 'MachineGuid']);
           final m = RegExp(r'MachineGuid\s+REG_SZ\s+(\S+)').firstMatch(g.stdout as String);
           if (m != null) parts.add(m.group(1)!);
         }

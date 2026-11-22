@@ -9,36 +9,28 @@ class AuditService {
   final AppDatabase db;
   AuditService(this.db);
 
-  Future<void> log(
-    User? user,
-    String action, {
-    String? entity,
-    int? entityId,
-    Object? details,
-  }) async {
+  Future<void> log(User? user, String action, {String? entity, int? entityId, Object? details}) async {
     String? d;
     if (details is String) {
       d = details;
     } else if (details != null) {
       d = jsonEncode(details);
     }
-    await db.into(db.auditLogs).insert(AuditLogsCompanion.insert(
-          action: action,
-          userId: Value(user?.id),
-          userName: Value(user?.fullName),
-          entity: Value(entity),
-          entityId: Value(entityId),
-          details: Value(d),
-        ));
+    await db
+        .into(db.auditLogs)
+        .insert(
+          AuditLogsCompanion.insert(
+            action: action,
+            userId: Value(user?.id),
+            userName: Value(user?.fullName),
+            entity: Value(entity),
+            entityId: Value(entityId),
+            details: Value(d),
+          ),
+        );
   }
 
-  Future<List<AuditLog>> list({
-    DateTime? from,
-    DateTime? to,
-    int? userId,
-    String? search,
-    int limit = 500,
-  }) {
+  Future<List<AuditLog>> list({DateTime? from, DateTime? to, int? userId, String? search, int limit = 500}) {
     final q = db.select(db.auditLogs);
     q.where((t) {
       Expression<bool> e = const Constant(true);

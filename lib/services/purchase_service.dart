@@ -81,15 +81,19 @@ class PurchaseService {
     final discountRatio = gross > 0 ? discountUsd / gross : 0.0;
 
     final purchaseId = await db.transaction(() async {
-      final id = await db.into(db.purchases).insert(PurchasesCompanion.insert(
-            supplierId: supplier.id,
-            invoiceNumber: Value(invoiceNumber?.trim().isEmpty == true ? null : invoiceNumber?.trim()),
-            invoiceDate: invoiceDate ?? DateTime.now(),
-            totalUsd: net,
-            discountUsd: Value(discountUsd),
-            notes: Value(notes),
-            userId: Value(actor.id),
-          ));
+      final id = await db
+          .into(db.purchases)
+          .insert(
+            PurchasesCompanion.insert(
+              supplierId: supplier.id,
+              invoiceNumber: Value(invoiceNumber?.trim().isEmpty == true ? null : invoiceNumber?.trim()),
+              invoiceDate: invoiceDate ?? DateTime.now(),
+              totalUsd: net,
+              discountUsd: Value(discountUsd),
+              notes: Value(notes),
+              userId: Value(actor.id),
+            ),
+          );
       for (final l in valid) {
         final totalBoxes = l.quantityBoxes + l.bonusBoxes;
         // التكلفة الفعلية للعلبة بعد البونص والخصم
@@ -107,17 +111,21 @@ class PurchaseService {
           purchaseId: id,
           logAudit: false,
         );
-        await db.into(db.purchaseItems).insert(PurchaseItemsCompanion.insert(
-              purchaseId: id,
-              medicineId: l.medicine.id,
-              batchId: Value(batch.id),
-              quantityBoxes: l.quantityBoxes,
-              bonusBoxes: Value(l.bonusBoxes),
-              costUsdPerBox: l.costUsdPerBox,
-              batchNumber: Value(l.batchNumber),
-              expiryDate: Value(l.expiryDate),
-              totalUsd: l.totalUsd,
-            ));
+        await db
+            .into(db.purchaseItems)
+            .insert(
+              PurchaseItemsCompanion.insert(
+                purchaseId: id,
+                medicineId: l.medicine.id,
+                batchId: Value(batch.id),
+                quantityBoxes: l.quantityBoxes,
+                bonusBoxes: Value(l.bonusBoxes),
+                costUsdPerBox: l.costUsdPerBox,
+                batchNumber: Value(l.batchNumber),
+                expiryDate: Value(l.expiryDate),
+                totalUsd: l.totalUsd,
+              ),
+            );
         if (l.newPriceUsd != null && l.newPriceUsd! > 0 && l.newPriceUsd != l.medicine.priceUsd) {
           await inventory.saveMedicine(
             actor: actor,
@@ -135,10 +143,13 @@ class PurchaseService {
         userId: actor.id,
         note: invoiceNumber == null || invoiceNumber.isEmpty ? 'فاتورة شراء #$id' : 'فاتورة $invoiceNumber',
       );
-      await audit.log(actor, AuditActions.purchaseCreated,
-          entity: 'purchase',
-          entityId: id,
-          details: {'supplier': supplier.name, 'total': net, 'items': valid.length, 'invoice': invoiceNumber});
+      await audit.log(
+        actor,
+        AuditActions.purchaseCreated,
+        entity: 'purchase',
+        entityId: id,
+        details: {'supplier': supplier.name, 'total': net, 'items': valid.length, 'invoice': invoiceNumber},
+      );
       if (paidAmount > 0) {
         await suppliers.pay(
           actor: actor,
@@ -151,8 +162,9 @@ class PurchaseService {
           purchaseId: id,
         );
         final paidUsd = paidCurrency == currencyUsd ? paidAmount : sypToUsd(paidAmount, rate);
-        await (db.update(db.purchases)..where((t) => t.id.equals(id)))
-            .write(PurchasesCompanion(paidUsd: Value(paidUsd)));
+        await (db.update(
+          db.purchases,
+        )..where((t) => t.id.equals(id))).write(PurchasesCompanion(paidUsd: Value(paidUsd)));
       }
       return id;
     });
@@ -180,10 +192,8 @@ class PurchaseService {
     final s = (await suppliers.byId(p.supplierId))!;
     final q = db.select(db.purchaseItems).join([
       innerJoin(db.medicines, db.medicines.id.equalsExp(db.purchaseItems.medicineId)),
-    ])
-      ..where(db.purchaseItems.purchaseId.equals(id));
+    ])..where(db.purchaseItems.purchaseId.equals(id));
     final rows = await q.get();
-    return PurchaseDetails(
-        p, s, rows.map((r) => (r.readTable(db.purchaseItems), r.readTable(db.medicines))).toList());
+    return PurchaseDetails(p, s, rows.map((r) => (r.readTable(db.purchaseItems), r.readTable(db.medicines))).toList());
   }
 }

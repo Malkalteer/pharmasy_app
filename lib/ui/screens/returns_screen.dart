@@ -27,15 +27,18 @@ class ReturnsScreen extends StatelessWidget {
       length: tabs.length,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          TabBar(
-            isScrollable: true,
-            labelStyle: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 16),
-            tabs: [for (final t in tabs) Tab(text: t.$1, icon: Icon(t.$2))],
-          ),
-          const SizedBox(height: 12),
-          Expanded(child: TabBarView(children: [for (final t in tabs) t.$3])),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TabBar(
+              isScrollable: true,
+              labelStyle: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 16),
+              tabs: [for (final t in tabs) Tab(text: t.$1, icon: Icon(t.$2))],
+            ),
+            const SizedBox(height: 12),
+            Expanded(child: TabBarView(children: [for (final t in tabs) t.$3])),
+          ],
+        ),
       ),
     );
   }
@@ -105,11 +108,12 @@ class _CustomerReturnTabState extends State<_CustomerReturnTab> {
     final debtPart = _debtLeft > 0 ? (total < _debtLeft ? total : _debtLeft) : 0.0;
     final cash = roundTo(total - debtPart, 2);
     if (!await confirm(
-        context,
-        'تأكيد المرتجع',
-        'قيمة المرتجع: ${fmtSyp(total)}\n'
-            '${debtPart > 0 ? 'يُخصم من دين الزبون: ${fmtSyp(debtPart)}\n' : ''}'
-            '${cash > 0 ? 'يُعاد للزبون نقداً من الدرج: ${fmtSyp(cash)}' : ''}')) {
+      context,
+      'تأكيد المرتجع',
+      'قيمة المرتجع: ${fmtSyp(total)}\n'
+          '${debtPart > 0 ? 'يُخصم من دين الزبون: ${fmtSyp(debtPart)}\n' : ''}'
+          '${cash > 0 ? 'يُعاد للزبون نقداً من الدرج: ${fmtSyp(cash)}' : ''}',
+    )) {
       return;
     }
     if (!mounted) return;
@@ -124,61 +128,85 @@ class _CustomerReturnTabState extends State<_CustomerReturnTab> {
   @override
   Widget build(BuildContext context) {
     final d = _d;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Row(children: [
-        SizedBox(
-          width: 240,
-          child: NumField(controller: _invoice, label: 'رقم الفاتورة', decimal: false, autofocus: true, onSubmitted: (_) => _load()),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              width: 240,
+              child: NumField(
+                controller: _invoice,
+                label: 'رقم الفاتورة',
+                decimal: false,
+                autofocus: true,
+                onSubmitted: (_) => _load(),
+              ),
+            ),
+            const SizedBox(width: 10),
+            FilledButton.icon(onPressed: _load, icon: const Icon(Icons.search), label: const Text('عرض الفاتورة')),
+          ],
         ),
-        const SizedBox(width: 10),
-        FilledButton.icon(onPressed: _load, icon: const Icon(Icons.search), label: const Text('عرض الفاتورة')),
-      ]),
-      const SizedBox(height: 12),
-      if (d == null)
-        const Expanded(child: EmptyState('أدخل رقم الفاتورة المطبوع على إيصال الزبون', icon: Icons.receipt))
-      else if (d.sale.status != 'completed')
-        const Expanded(child: EmptyState('هذه الفاتورة ملغاة', icon: Icons.block))
-      else ...[
-        Text('تاريخ الفاتورة: ${fmtDateTime(d.sale.createdAt)}   •   الإجمالي: ${fmtSyp(d.sale.totalSyp)}'
+        const SizedBox(height: 12),
+        if (d == null)
+          const Expanded(child: EmptyState('أدخل رقم الفاتورة المطبوع على إيصال الزبون', icon: Icons.receipt))
+        else if (d.sale.status != 'completed')
+          const Expanded(child: EmptyState('هذه الفاتورة ملغاة', icon: Icons.block))
+        else ...[
+          Text(
+            'تاريخ الفاتورة: ${fmtDateTime(d.sale.createdAt)}   •   الإجمالي: ${fmtSyp(d.sale.totalSyp)}'
             '${d.customer != null ? '   •   الزبون: ${d.customer!.name}' : ''}'
-            '${_debtLeft > 0 ? '   •   دين متبقٍ على الفاتورة: ${fmtSyp(_debtLeft)}' : ''}'),
-        const SizedBox(height: 10),
-        Expanded(
-          child: SimpleTable(
-            columns: const ['الصنف', 'المباع', 'القابل للإرجاع', 'الكمية المرتجعة', 'يعود للمخزون', 'القيمة'],
-            rows: [
-              for (final it in d.items)
-                [
-                  Text(it.medicineName),
-                  Text('${it.quantity} ${it.unitLabel}'),
-                  Text('${ReturnsService.returnableQty(it)} ${it.unitLabel}'),
-                  SizedBox(
-                    width: 90,
-                    child: NumField(
-                      controller: _qty[it.id]!,
-                      label: '',
-                      decimal: false,
-                      enabled: ReturnsService.returnableQty(it) > 0,
-                      onChanged: (_) => setState(() {}),
+            '${_debtLeft > 0 ? '   •   دين متبقٍ على الفاتورة: ${fmtSyp(_debtLeft)}' : ''}',
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: SimpleTable(
+              columns: const ['الصنف', 'المباع', 'القابل للإرجاع', 'الكمية المرتجعة', 'يعود للمخزون', 'القيمة'],
+              rows: [
+                for (final it in d.items)
+                  [
+                    Text(it.medicineName),
+                    Text('${it.quantity} ${it.unitLabel}'),
+                    Text('${ReturnsService.returnableQty(it)} ${it.unitLabel}'),
+                    SizedBox(
+                      width: 90,
+                      child: NumField(
+                        controller: _qty[it.id]!,
+                        label: '',
+                        decimal: false,
+                        enabled: ReturnsService.returnableQty(it) > 0,
+                        onChanged: (_) => setState(() {}),
+                      ),
                     ),
-                  ),
-                  Checkbox(value: _restock[it.id], onChanged: (v) => setState(() => _restock[it.id] = v ?? true)),
-                  Text(fmtSyp(ReturnsService.lineRefund(d.sale, it, parseInt(_qty[it.id]!.text) ?? 0))),
-                ],
+                    Checkbox(value: _restock[it.id], onChanged: (v) => setState(() => _restock[it.id] = v ?? true)),
+                    Text(fmtSyp(ReturnsService.lineRefund(d.sale, it, parseInt(_qty[it.id]!.text) ?? 0))),
+                  ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Text(
+                'قيمة المرتجع: ${fmtSyp(_total)}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: _save,
+                icon: const Icon(Icons.assignment_return),
+                label: const Text('تسجيل المرتجع'),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 10),
-        Row(children: [
-          Text('قيمة المرتجع: ${fmtSyp(_total)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const Spacer(),
-          FilledButton.icon(onPressed: _save, icon: const Icon(Icons.assignment_return), label: const Text('تسجيل المرتجع')),
-        ]),
-        const SizedBox(height: 4),
-        Text('ألغِ تحديد "يعود للمخزون" إذا كان الدواء المرتجع تالفاً ولا يصلح للبيع.',
-            style: TextStyle(color: Colors.grey.shade600)),
+          const SizedBox(height: 4),
+          Text(
+            'ألغِ تحديد "يعود للمخزون" إذا كان الدواء المرتجع تالفاً ولا يصلح للبيع.',
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
+        ],
       ],
-    ]);
+    );
   }
 }
 
@@ -235,7 +263,9 @@ class _SupplierReturnTabState extends State<_SupplierReturnTab> {
                 for (final b in batches)
                   SimpleDialogOption(
                     onPressed: () => Navigator.pop(ctx, b),
-                    child: Text('انتهاء ${fmtDate(b.expiryDate)}  •  ${m.describeQty(b.quantity)}  •  تشغيلة ${b.batchNumber ?? '-'}'),
+                    child: Text(
+                      'انتهاء ${fmtDate(b.expiryDate)}  •  ${m.describeQty(b.quantity)}  •  تشغيلة ${b.batchNumber ?? '-'}',
+                    ),
                   ),
               ],
             ),
@@ -286,90 +316,124 @@ class _SupplierReturnTabState extends State<_SupplierReturnTab> {
   @override
   Widget build(BuildContext context) {
     final total = _lines.fold<double>(0, (a, l) => a + l.medicine.costOf(l.base, l.batch.costUsdPerBox));
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Row(children: [
-        SizedBox(
-          width: 300,
-          child: DropdownButtonFormField<int>(
-            initialValue: _supplier?.id,
-            decoration: const InputDecoration(labelText: 'المورد'),
-            items: [for (final s in _suppliers) DropdownMenuItem(value: s.supplier.id, child: Text(s.supplier.name))],
-            onChanged: (v) => setState(() => _supplier = _suppliers.firstWhere((s) => s.supplier.id == v).supplier),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TextField(
-            controller: _search,
-            decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'ابحث عن الدواء المراد إرجاعه'),
-            onChanged: (v) async {
-              final r = v.trim().isEmpty ? <MedicineStock>[] : await st.s.inventory.listWithStock(search: v, limit: 12);
-              if (mounted) setState(() => _results = r);
-            },
-          ),
-        ),
-      ]),
-      if (_results.isNotEmpty)
-        Card(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 200),
-            child: ListView(shrinkWrap: true, children: [
-              for (final r in _results)
-                ListTile(
-                  dense: true,
-                  title: Text(r.medicine.name),
-                  subtitle: Text('المتوفر: ${r.medicine.describeQty(r.available + r.expired)}'),
-                  onTap: () => _pickBatch(r.medicine),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              width: 300,
+              child: DropdownButtonFormField<int>(
+                initialValue: _supplier?.id,
+                decoration: const InputDecoration(labelText: 'المورد'),
+                items: [
+                  for (final s in _suppliers) DropdownMenuItem(value: s.supplier.id, child: Text(s.supplier.name)),
+                ],
+                onChanged: (v) => setState(() => _supplier = _suppliers.firstWhere((s) => s.supplier.id == v).supplier),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _search,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search),
+                  hintText: 'ابحث عن الدواء المراد إرجاعه',
                 ),
-            ]),
+                onChanged: (v) async {
+                  final r = v.trim().isEmpty
+                      ? <MedicineStock>[]
+                      : await st.s.inventory.listWithStock(search: v, limit: 12);
+                  if (mounted) setState(() => _results = r);
+                },
+              ),
+            ),
+          ],
+        ),
+        if (_results.isNotEmpty)
+          Card(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final r in _results)
+                    ListTile(
+                      dense: true,
+                      title: Text(r.medicine.name),
+                      subtitle: Text('المتوفر: ${r.medicine.describeQty(r.available + r.expired)}'),
+                      onTap: () => _pickBatch(r.medicine),
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
-      const SizedBox(height: 10),
-      Expanded(
-        child: SimpleTable(
-          columns: const ['الدواء', 'الدفعة', 'المتوفر', 'علب', 'حبات', 'القيمة (تكلفة)', ''],
-          rows: [
-            for (final l in _lines)
-              [
-                Text(l.medicine.name),
-                Text('${fmtDate(l.batch.expiryDate)} / ${l.batch.batchNumber ?? '-'}'),
-                Text(l.medicine.describeQty(l.batch.quantity)),
-                SizedBox(width: 80, child: NumField(controller: l.boxes, label: '', decimal: false, onChanged: (_) => setState(() {}))),
-                SizedBox(width: 80, child: NumField(controller: l.units, label: '', decimal: false, onChanged: (_) => setState(() {}))),
-                Text(fmtUsd(roundTo(l.medicine.costOf(l.base, l.batch.costUsdPerBox), 2))),
-                IconButton(icon: const Icon(Icons.close, color: kDanger), onPressed: () => setState(() => _lines.remove(l))),
-              ],
-          ],
-        ),
-      ),
-      const SizedBox(height: 10),
-      Row(children: [
-        SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(value: 'credit', label: Text('خصم من حساب المورد')),
-            ButtonSegment(value: 'cash', label: Text('استلام نقدي')),
-          ],
-          selected: {_settlement},
-          onSelectionChanged: (v) => setState(() => _settlement = v.first),
-        ),
-        if (_settlement == 'cash') ...[
-          const SizedBox(width: 8),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: currencyUsd, label: Text('\$')),
-              ButtonSegment(value: currencySyp, label: Text('ل.س')),
+        const SizedBox(height: 10),
+        Expanded(
+          child: SimpleTable(
+            columns: const ['الدواء', 'الدفعة', 'المتوفر', 'علب', 'حبات', 'القيمة (تكلفة)', ''],
+            rows: [
+              for (final l in _lines)
+                [
+                  Text(l.medicine.name),
+                  Text('${fmtDate(l.batch.expiryDate)} / ${l.batch.batchNumber ?? '-'}'),
+                  Text(l.medicine.describeQty(l.batch.quantity)),
+                  SizedBox(
+                    width: 80,
+                    child: NumField(controller: l.boxes, label: '', decimal: false, onChanged: (_) => setState(() {})),
+                  ),
+                  SizedBox(
+                    width: 80,
+                    child: NumField(controller: l.units, label: '', decimal: false, onChanged: (_) => setState(() {})),
+                  ),
+                  Text(fmtUsd(roundTo(l.medicine.costOf(l.base, l.batch.costUsdPerBox), 2))),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: kDanger),
+                    onPressed: () => setState(() => _lines.remove(l)),
+                  ),
+                ],
             ],
-            selected: {_cashCurrency},
-            onSelectionChanged: (v) => setState(() => _cashCurrency = v.first),
           ),
-        ],
-        const SizedBox(width: 10),
-        Expanded(child: TextField(controller: _note, decoration: const InputDecoration(labelText: 'ملاحظة / السبب'))),
-        const SizedBox(width: 16),
-        Text('القيمة: ${fmtUsd(roundTo(total, 2))}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-        const SizedBox(width: 16),
-        FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save), label: const Text('حفظ المرتجع')),
-      ]),
-    ]);
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'credit', label: Text('خصم من حساب المورد')),
+                ButtonSegment(value: 'cash', label: Text('استلام نقدي')),
+              ],
+              selected: {_settlement},
+              onSelectionChanged: (v) => setState(() => _settlement = v.first),
+            ),
+            if (_settlement == 'cash') ...[
+              const SizedBox(width: 8),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: currencyUsd, label: Text('\$')),
+                  ButtonSegment(value: currencySyp, label: Text('ل.س')),
+                ],
+                selected: {_cashCurrency},
+                onSelectionChanged: (v) => setState(() => _cashCurrency = v.first),
+              ),
+            ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _note,
+                decoration: const InputDecoration(labelText: 'ملاحظة / السبب'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Text(
+              'القيمة: ${fmtUsd(roundTo(total, 2))}',
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 16),
+            FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save), label: const Text('حفظ المرتجع')),
+          ],
+        ),
+      ],
+    );
   }
 }

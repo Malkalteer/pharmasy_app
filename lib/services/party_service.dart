@@ -37,25 +37,32 @@ class CustomerService {
       where += ' AND (c.name LIKE ? OR c.phone LIKE ?)';
       vars.addAll([Variable.withString('%${search.trim()}%'), Variable.withString('%${search.trim()}%')]);
     }
-    final rows = await db.customSelect('''
+    final rows = await db
+        .customSelect(
+          '''
 SELECT c.*, COALESCE((SELECT SUM(amount_usd) FROM customer_transactions t WHERE t.customer_id = c.id), 0) AS bal
 FROM customers c $where ORDER BY c.name COLLATE NOCASE
-''', variables: vars, readsFrom: {db.customers, db.customerTransactions}).get();
+''',
+          variables: vars,
+          readsFrom: {db.customers, db.customerTransactions},
+        )
+        .get();
     final l = rows
         .map((r) => CustomerWithBalance(db.customers.map(r.data), roundTo(r.read<double>('bal'), 6)))
         .toList();
     return onlyDebtors ? l.where((c) => c.balanceUsd > 0.0001).toList() : l;
   }
 
-  Future<Customer?> byId(int id) =>
-      (db.select(db.customers)..where((t) => t.id.equals(id))).getSingleOrNull();
+  Future<Customer?> byId(int id) => (db.select(db.customers)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Future<double> balanceUsd(int customerId) async {
-    final r = await db.customSelect(
-      'SELECT COALESCE(SUM(amount_usd),0) AS s FROM customer_transactions WHERE customer_id = ?',
-      variables: [Variable.withInt(customerId)],
-      readsFrom: {db.customerTransactions},
-    ).getSingle();
+    final r = await db
+        .customSelect(
+          'SELECT COALESCE(SUM(amount_usd),0) AS s FROM customer_transactions WHERE customer_id = ?',
+          variables: [Variable.withInt(customerId)],
+          readsFrom: {db.customerTransactions},
+        )
+        .getSingle();
     return roundTo(r.read<double>('s'), 6);
   }
 
@@ -97,18 +104,22 @@ FROM customers c $where ORDER BY c.name COLLATE NOCASE
     int? userId,
     String? note,
   }) async {
-    await db.into(db.customerTransactions).insert(CustomerTransactionsCompanion.insert(
-          customerId: customerId,
-          type: type,
-          amountUsd: amountUsd,
-          currency: Value(currency),
-          originalAmount: Value(originalAmount),
-          rate: Value(rate),
-          refId: Value(refId),
-          shiftId: Value(shiftId),
-          userId: Value(userId),
-          note: Value(note),
-        ));
+    await db
+        .into(db.customerTransactions)
+        .insert(
+          CustomerTransactionsCompanion.insert(
+            customerId: customerId,
+            type: type,
+            amountUsd: amountUsd,
+            currency: Value(currency),
+            originalAmount: Value(originalAmount),
+            rate: Value(rate),
+            refId: Value(refId),
+            shiftId: Value(shiftId),
+            userId: Value(userId),
+            note: Value(note),
+          ),
+        );
   }
 
   /// تحصيل دفعة من دين زبون إلى درج الصيدلي
@@ -127,8 +138,14 @@ FROM customers c $where ORDER BY c.name COLLATE NOCASE
     final usd = currency == currencyUsd ? amount : sypToUsd(amount, rate);
     await db.transaction(() async {
       final mvId = await shifts.addMovementRaw(
-          shift.id, actor.id, CashTypes.customerPayment, currency, amount,
-          refId: customer.id, note: customer.name);
+        shift.id,
+        actor.id,
+        CashTypes.customerPayment,
+        currency,
+        amount,
+        refId: customer.id,
+        note: customer.name,
+      );
       await addTransaction(
         customerId: customer.id,
         type: 'payment',
@@ -141,10 +158,13 @@ FROM customers c $where ORDER BY c.name COLLATE NOCASE
         userId: actor.id,
         note: note,
       );
-      await audit.log(actor, AuditActions.customerPayment,
-          entity: 'customer',
-          entityId: customer.id,
-          details: {'name': customer.name, 'amount': amount, 'currency': currency});
+      await audit.log(
+        actor,
+        AuditActions.customerPayment,
+        entity: 'customer',
+        entityId: customer.id,
+        details: {'name': customer.name, 'amount': amount, 'currency': currency},
+      );
     });
   }
 
@@ -157,17 +177,21 @@ FROM customers c $where ORDER BY c.name COLLATE NOCASE
   }) async {
     if (!actor.isOwner) throw PermissionDenied();
     await addTransaction(
-        customerId: customer.id,
-        type: 'adjustment',
-        amountUsd: amountUsd,
-        currency: currencyUsd,
-        originalAmount: amountUsd,
-        userId: actor.id,
-        note: note);
-    await audit.log(actor, AuditActions.debtAdjusted,
-        entity: 'customer',
-        entityId: customer.id,
-        details: {'name': customer.name, 'usd': amountUsd, 'note': note});
+      customerId: customer.id,
+      type: 'adjustment',
+      amountUsd: amountUsd,
+      currency: currencyUsd,
+      originalAmount: amountUsd,
+      userId: actor.id,
+      note: note,
+    );
+    await audit.log(
+      actor,
+      AuditActions.debtAdjusted,
+      entity: 'customer',
+      entityId: customer.id,
+      details: {'name': customer.name, 'usd': amountUsd, 'note': note},
+    );
   }
 
   Future<List<CustomerTransaction>> statement(int customerId) =>
@@ -192,24 +216,29 @@ class SupplierService {
       where += ' AND (s.name LIKE ? OR s.phone LIKE ?)';
       vars.addAll([Variable.withString('%${search.trim()}%'), Variable.withString('%${search.trim()}%')]);
     }
-    final rows = await db.customSelect('''
+    final rows = await db
+        .customSelect(
+          '''
 SELECT s.*, COALESCE((SELECT SUM(amount_usd) FROM supplier_transactions t WHERE t.supplier_id = s.id), 0) AS bal
 FROM suppliers s $where ORDER BY s.name COLLATE NOCASE
-''', variables: vars, readsFrom: {db.suppliers, db.supplierTransactions}).get();
-    return rows
-        .map((r) => SupplierWithBalance(db.suppliers.map(r.data), roundTo(r.read<double>('bal'), 6)))
-        .toList();
+''',
+          variables: vars,
+          readsFrom: {db.suppliers, db.supplierTransactions},
+        )
+        .get();
+    return rows.map((r) => SupplierWithBalance(db.suppliers.map(r.data), roundTo(r.read<double>('bal'), 6))).toList();
   }
 
-  Future<Supplier?> byId(int id) =>
-      (db.select(db.suppliers)..where((t) => t.id.equals(id))).getSingleOrNull();
+  Future<Supplier?> byId(int id) => (db.select(db.suppliers)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Future<double> balanceUsd(int supplierId) async {
-    final r = await db.customSelect(
-      'SELECT COALESCE(SUM(amount_usd),0) AS s FROM supplier_transactions WHERE supplier_id = ?',
-      variables: [Variable.withInt(supplierId)],
-      readsFrom: {db.supplierTransactions},
-    ).getSingle();
+    final r = await db
+        .customSelect(
+          'SELECT COALESCE(SUM(amount_usd),0) AS s FROM supplier_transactions WHERE supplier_id = ?',
+          variables: [Variable.withInt(supplierId)],
+          readsFrom: {db.supplierTransactions},
+        )
+        .getSingle();
     return roundTo(r.read<double>('s'), 6);
   }
 
@@ -251,18 +280,22 @@ FROM suppliers s $where ORDER BY s.name COLLATE NOCASE
     int? userId,
     String? note,
   }) async {
-    await db.into(db.supplierTransactions).insert(SupplierTransactionsCompanion.insert(
-          supplierId: supplierId,
-          type: type,
-          amountUsd: amountUsd,
-          currency: Value(currency),
-          originalAmount: Value(originalAmount),
-          rate: Value(rate),
-          refId: Value(refId),
-          shiftId: Value(shiftId),
-          userId: Value(userId),
-          note: Value(note),
-        ));
+    await db
+        .into(db.supplierTransactions)
+        .insert(
+          SupplierTransactionsCompanion.insert(
+            supplierId: supplierId,
+            type: type,
+            amountUsd: amountUsd,
+            currency: Value(currency),
+            originalAmount: Value(originalAmount),
+            rate: Value(rate),
+            refId: Value(refId),
+            shiftId: Value(shiftId),
+            userId: Value(userId),
+            note: Value(note),
+          ),
+        );
   }
 
   /// دفعة للمورد. إذا كانت من الدرج تُسجَّل حركة خروج في وردية المستخدم.
@@ -288,8 +321,14 @@ FROM suppliers s $where ORDER BY s.name COLLATE NOCASE
           throw BusinessException('المبلغ أكبر من الموجود في الدرج');
         }
         await shifts.addMovementRaw(
-            fromShift.id, actor.id, CashTypes.supplierPayment, currency, -amount,
-            refId: supplier.id, note: supplier.name);
+          fromShift.id,
+          actor.id,
+          CashTypes.supplierPayment,
+          currency,
+          -amount,
+          refId: supplier.id,
+          note: supplier.name,
+        );
       }
       await addTransaction(
         supplierId: supplier.id,
@@ -303,15 +342,13 @@ FROM suppliers s $where ORDER BY s.name COLLATE NOCASE
         userId: actor.id,
         note: note,
       );
-      await audit.log(actor, AuditActions.supplierPayment,
-          entity: 'supplier',
-          entityId: supplier.id,
-          details: {
-            'name': supplier.name,
-            'amount': amount,
-            'currency': currency,
-            'fromDrawer': fromShift != null,
-          });
+      await audit.log(
+        actor,
+        AuditActions.supplierPayment,
+        entity: 'supplier',
+        entityId: supplier.id,
+        details: {'name': supplier.name, 'amount': amount, 'currency': currency, 'fromDrawer': fromShift != null},
+      );
     });
   }
 
@@ -322,7 +359,8 @@ FROM suppliers s $where ORDER BY s.name COLLATE NOCASE
           .get();
 }
 
-String customerTxLabel(String t) => const {
+String customerTxLabel(String t) =>
+    const {
       'sale': 'فاتورة بالدين',
       'payment': 'دفعة',
       'return': 'مرتجع',
@@ -331,10 +369,5 @@ String customerTxLabel(String t) => const {
     }[t] ??
     t;
 
-String supplierTxLabel(String t) => const {
-      'purchase': 'فاتورة شراء',
-      'payment': 'دفعة',
-      'return': 'مرتجع',
-      'adjustment': 'تسوية',
-    }[t] ??
-    t;
+String supplierTxLabel(String t) =>
+    const {'purchase': 'فاتورة شراء', 'payment': 'دفعة', 'return': 'مرتجع', 'adjustment': 'تسوية'}[t] ?? t;

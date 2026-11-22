@@ -22,22 +22,15 @@ class UserService {
   }
 
   static Future<String> hashPassword(String password, String salt) async {
-    final algo = Pbkdf2(
-      macAlgorithm: Hmac.sha256(),
-      iterations: _iterations,
-      bits: 256,
-    );
-    final key = await algo.deriveKeyFromPassword(
-      password: password,
-      nonce: base64Decode(salt),
-    );
+    final algo = Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: _iterations, bits: 256);
+    final key = await algo.deriveKeyFromPassword(password: password, nonce: base64Decode(salt));
     return base64Encode(await key.extractBytes());
   }
 
   Future<bool> hasUsers() async {
-    final c = await (db.selectOnly(db.users)..addColumns([db.users.id.count()]))
-        .map((r) => r.read(db.users.id.count()))
-        .getSingle();
+    final c = await (db.selectOnly(
+      db.users,
+    )..addColumns([db.users.id.count()])).map((r) => r.read(db.users.id.count())).getSingle();
     return (c ?? 0) > 0;
   }
 
@@ -48,13 +41,12 @@ class UserService {
     return q.get();
   }
 
-  Future<User?> byId(int id) =>
-      (db.select(db.users)..where((t) => t.id.equals(id))).getSingleOrNull();
+  Future<User?> byId(int id) => (db.select(db.users)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Future<User?> authenticate(String username, String password) async {
-    final u = await (db.select(db.users)
-          ..where((t) => t.username.equals(username.trim().toLowerCase())))
-        .getSingleOrNull();
+    final u = await (db.select(
+      db.users,
+    )..where((t) => t.username.equals(username.trim().toLowerCase()))).getSingleOrNull();
     if (u == null || !u.active) {
       await audit.log(null, AuditActions.loginFailed, details: username);
       return null;
@@ -68,8 +60,7 @@ class UserService {
     return u;
   }
 
-  Future<bool> verifyPassword(User u, String password) async =>
-      await hashPassword(password, u.salt) == u.passwordHash;
+  Future<bool> verifyPassword(User u, String password) async => await hashPassword(password, u.salt) == u.passwordHash;
 
   Future<User> create({
     required User? actor,
@@ -85,22 +76,29 @@ class UserService {
     if (password.length < 4) {
       throw BusinessException('كلمة المرور يجب أن تكون 4 أحرف على الأقل');
     }
-    final exists = await (db.select(db.users)
-          ..where((t) => t.username.equals(uname)))
-        .getSingleOrNull();
+    final exists = await (db.select(db.users)..where((t) => t.username.equals(uname))).getSingleOrNull();
     if (exists != null) throw BusinessException('اسم المستخدم موجود مسبقاً');
     final salt = _randomSalt();
-    final id = await db.into(db.users).insert(UsersCompanion.insert(
-          username: uname,
-          fullName: fullName.trim(),
-          passwordHash: await hashPassword(password, salt),
-          salt: salt,
-          role: role,
-          permissions: Value(encodePermissions(permissions)),
-        ));
+    final id = await db
+        .into(db.users)
+        .insert(
+          UsersCompanion.insert(
+            username: uname,
+            fullName: fullName.trim(),
+            passwordHash: await hashPassword(password, salt),
+            salt: salt,
+            role: role,
+            permissions: Value(encodePermissions(permissions)),
+          ),
+        );
     final u = (await byId(id))!;
-    await audit.log(actor ?? u, AuditActions.userCreated,
-        entity: 'user', entityId: id, details: {'username': uname, 'role': role});
+    await audit.log(
+      actor ?? u,
+      AuditActions.userCreated,
+      entity: 'user',
+      entityId: id,
+      details: {'username': uname, 'role': role},
+    );
     return u;
   }
 
@@ -114,9 +112,7 @@ class UserService {
   }) async {
     if (!actor.isOwner) throw PermissionDenied();
     if (user.isOwner && (role != roleOwner || !active)) {
-      final owners = (await list())
-          .where((u) => u.isOwner && u.active && u.id != user.id)
-          .length;
+      final owners = (await list()).where((u) => u.isOwner && u.active && u.id != user.id).length;
       if (owners == 0) {
         throw BusinessException('يجب أن يبقى مالك واحد فعّال على الأقل');
       }
@@ -129,33 +125,24 @@ class UserService {
         active: Value(active),
       ),
     );
-    await audit.log(actor, AuditActions.userUpdated,
-        entity: 'user',
-        entityId: user.id,
-        details: {
-          'role': role,
-          'active': active,
-          'permissions': permissions.map((p) => p.label).toList(),
-        });
+    await audit.log(
+      actor,
+      AuditActions.userUpdated,
+      entity: 'user',
+      entityId: user.id,
+      details: {'role': role, 'active': active, 'permissions': permissions.map((p) => p.label).toList()},
+    );
   }
 
-  Future<void> changePassword({
-    required User actor,
-    required User user,
-    required String newPassword,
-  }) async {
+  Future<void> changePassword({required User actor, required User user, required String newPassword}) async {
     if (!actor.isOwner && actor.id != user.id) throw PermissionDenied();
     if (newPassword.length < 4) {
       throw BusinessException('كلمة المرور يجب أن تكون 4 أحرف على الأقل');
     }
     final salt = _randomSalt();
     await (db.update(db.users)..where((t) => t.id.equals(user.id))).write(
-      UsersCompanion(
-        salt: Value(salt),
-        passwordHash: Value(await hashPassword(newPassword, salt)),
-      ),
+      UsersCompanion(salt: Value(salt), passwordHash: Value(await hashPassword(newPassword, salt))),
     );
-    await audit.log(actor, AuditActions.passwordChanged,
-        entity: 'user', entityId: user.id, details: user.username);
+    await audit.log(actor, AuditActions.passwordChanged, entity: 'user', entityId: user.id, details: user.username);
   }
 }

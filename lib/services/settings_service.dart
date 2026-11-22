@@ -42,8 +42,7 @@ class SettingsService {
   String? get(String key) => _cache[key];
   String getOr(String key, String def) => _cache[key] ?? def;
 
-  double getDouble(String key, double def) =>
-      double.tryParse(_cache[key] ?? '') ?? def;
+  double getDouble(String key, double def) => double.tryParse(_cache[key] ?? '') ?? def;
   int getInt(String key, int def) => int.tryParse(_cache[key] ?? '') ?? def;
   bool getBool(String key, bool def) {
     final v = _cache[key];
@@ -52,9 +51,7 @@ class SettingsService {
   }
 
   Future<void> set(String key, String value) async {
-    await db
-        .into(db.settings)
-        .insertOnConflictUpdate(SettingsCompanion.insert(key: key, value: value));
+    await db.into(db.settings).insertOnConflictUpdate(SettingsCompanion.insert(key: key, value: value));
     _cache[key] = value;
   }
 
@@ -71,15 +68,14 @@ class SettingsService {
   String get pharmacyName => getOr(SettingKeys.pharmacyName, 'الصيدلية');
   String get pharmacyAddress => getOr(SettingKeys.pharmacyAddress, '');
   String get pharmacyPhone => getOr(SettingKeys.pharmacyPhone, '');
-  String get receiptFooter =>
-      getOr(SettingKeys.receiptFooter, 'شكراً لزيارتكم - نتمنى لكم الشفاء العاجل');
+  String get receiptFooter => getOr(SettingKeys.receiptFooter, 'شكراً لزيارتكم - نتمنى لكم الشفاء العاجل');
 
   double get exchangeRate => getDouble(SettingKeys.exchangeRate, 0);
 
   RoundingConfig get rounding => RoundingConfig(
-        step: getDouble(SettingKeys.roundingStep, 1),
-        mode: RoundingConfig.parseMode(get(SettingKeys.roundingMode)),
-      );
+    step: getDouble(SettingKeys.roundingStep, 1),
+    mode: RoundingConfig.parseMode(get(SettingKeys.roundingMode)),
+  );
 
   String get paperSize => getOr(SettingKeys.paperSize, 'roll80');
   String? get printerName {
@@ -97,8 +93,7 @@ class SettingsService {
   Future<void> setExchangeRate(double rate, int? userId) async {
     await db.transaction(() async {
       await set(SettingKeys.exchangeRate, rate.toString());
-      await db.into(db.exchangeRates).insert(
-          ExchangeRatesCompanion.insert(rate: rate, userId: Value(userId)));
+      await db.into(db.exchangeRates).insert(ExchangeRatesCompanion.insert(rate: rate, userId: Value(userId)));
     });
   }
 

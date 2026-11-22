@@ -91,36 +91,64 @@ class AppPrinter {
     final doc = pw.Document(theme: theme);
 
     pw.Widget kv(String k, String v, {bool bold = false, double? size}) => pw.Padding(
-          padding: const pw.EdgeInsets.symmetric(vertical: 1),
-          child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              _T(k, style: pw.TextStyle(fontSize: size ?? fs, fontWeight: bold ? pw.FontWeight.bold : null)),
-              _T(v, style: pw.TextStyle(fontSize: size ?? fs, fontWeight: bold ? pw.FontWeight.bold : null)),
-            ],
+      padding: const pw.EdgeInsets.symmetric(vertical: 1),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          _T(
+            k,
+            style: pw.TextStyle(fontSize: size ?? fs, fontWeight: bold ? pw.FontWeight.bold : null),
           ),
-        );
+          _T(
+            v,
+            style: pw.TextStyle(fontSize: size ?? fs, fontWeight: bold ? pw.FontWeight.bold : null),
+          ),
+        ],
+      ),
+    );
 
     final header = <pw.Widget>[
       pw.Center(
-        child: _T(st.pharmacyName,
-            style: pw.TextStyle(fontSize: fs + 5, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center),
+        child: _T(
+          st.pharmacyName,
+          style: pw.TextStyle(fontSize: fs + 5, fontWeight: pw.FontWeight.bold),
+          textAlign: pw.TextAlign.center,
+        ),
       ),
       if (st.pharmacyAddress.isNotEmpty)
-        pw.Center(child: _T(st.pharmacyAddress, style: pw.TextStyle(fontSize: fs), textAlign: pw.TextAlign.center)),
+        pw.Center(
+          child: _T(
+            st.pharmacyAddress,
+            style: pw.TextStyle(fontSize: fs),
+            textAlign: pw.TextAlign.center,
+          ),
+        ),
       if (st.pharmacyPhone.isNotEmpty)
         pw.Center(
-          child: pw.Row(mainAxisSize: pw.MainAxisSize.min, children: [
-            _T('هاتف: ', style: pw.TextStyle(fontSize: fs)),
-            _T(st.pharmacyPhone, style: pw.TextStyle(fontSize: fs), textDirection: pw.TextDirection.ltr),
-          ]),
+          child: pw.Row(
+            mainAxisSize: pw.MainAxisSize.min,
+            children: [
+              _T('هاتف: ', style: pw.TextStyle(fontSize: fs)),
+              _T(
+                st.pharmacyPhone,
+                style: pw.TextStyle(fontSize: fs),
+                textDirection: pw.TextDirection.ltr,
+              ),
+            ],
+          ),
         ),
       pw.SizedBox(height: 4),
       if (sale.status == 'voided')
         pw.Center(
-            child: _T('*** فاتورة ملغاة ***',
-                style: pw.TextStyle(fontSize: fs + 2, fontWeight: pw.FontWeight.bold))),
-      if (copy) pw.Center(child: _T('(نسخة)', style: pw.TextStyle(fontSize: fs))),
+          child: _T(
+            '*** فاتورة ملغاة ***',
+            style: pw.TextStyle(fontSize: fs + 2, fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+      if (copy)
+        pw.Center(
+          child: _T('(نسخة)', style: pw.TextStyle(fontSize: fs)),
+        ),
       kv('رقم الفاتورة', '${sale.id}', bold: true),
       kv('التاريخ', fmtDateTime(sale.createdAt)),
       kv('الصيدلي', d.user?.fullName ?? '-'),
@@ -132,11 +160,7 @@ class AppPrinter {
     final cellStyle = pw.TextStyle(fontSize: fs);
     final itemsTable = pw.Table(
       columnWidths: roll
-          ? {
-              0: const pw.FlexColumnWidth(4),
-              1: const pw.FlexColumnWidth(2),
-              2: const pw.FlexColumnWidth(2.4),
-            }
+          ? {0: const pw.FlexColumnWidth(4), 1: const pw.FlexColumnWidth(2), 2: const pw.FlexColumnWidth(2.4)}
           : {
               0: const pw.FlexColumnWidth(5),
               1: const pw.FlexColumnWidth(2),
@@ -154,27 +178,30 @@ class AppPrinter {
           ],
         ),
         for (final it in d.items)
-          pw.TableRow(children: [
-            pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
-              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                _T(it.medicineName, style: cellStyle),
-                if (roll) _T('${fmtSypPlain(it.unitPriceSyp)} × ${it.quantity}', style: pw.TextStyle(fontSize: fs - 1)),
-              ]),
-            ),
-            _T('${it.quantity} ${it.unitLabel}', style: cellStyle, textAlign: pw.TextAlign.center),
-            if (!roll) _T(fmtSypPlain(it.unitPriceSyp), style: cellStyle, textAlign: pw.TextAlign.center),
-            _T(fmtSypPlain(it.totalSyp), style: cellStyle, textAlign: pw.TextAlign.left),
-          ]),
+          pw.TableRow(
+            children: [
+              pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    _T(it.medicineName, style: cellStyle),
+                    if (roll)
+                      _T('${fmtSypPlain(it.unitPriceSyp)} × ${it.quantity}', style: pw.TextStyle(fontSize: fs - 1)),
+                  ],
+                ),
+              ),
+              _T('${it.quantity} ${it.unitLabel}', style: cellStyle, textAlign: pw.TextAlign.center),
+              if (!roll) _T(fmtSypPlain(it.unitPriceSyp), style: cellStyle, textAlign: pw.TextAlign.center),
+              _T(fmtSypPlain(it.totalSyp), style: cellStyle, textAlign: pw.TextAlign.left),
+            ],
+          ),
       ],
     );
 
     final totals = <pw.Widget>[
       pw.Divider(thickness: 0.6),
-      if (sale.discountSyp > 0) ...[
-        kv('المجموع', fmtSyp(sale.subtotalSyp)),
-        kv('الخصم', fmtSyp(sale.discountSyp)),
-      ],
+      if (sale.discountSyp > 0) ...[kv('المجموع', fmtSyp(sale.subtotalSyp)), kv('الخصم', fmtSyp(sale.discountSyp))],
       kv('الإجمالي', fmtSyp(sale.totalSyp), bold: true, size: fs + 3),
       kv('بالدولار', fmtUsd(roundTo(sale.totalUsd, 2))),
       kv('سعر الصرف', '1\$ = ${fmtSypPlain(sale.rate)} ل.س', size: fs - 1),
@@ -184,25 +211,37 @@ class AppPrinter {
       if (sale.changeSyp > 0) kv('الباقي للزبون', fmtSyp(sale.changeSyp), bold: true),
       if (sale.debtSyp > 0) kv('دين على الزبون', fmtSyp(sale.debtSyp), bold: true),
       pw.Divider(thickness: 0.6),
-      pw.Center(child: _T(st.receiptFooter, style: pw.TextStyle(fontSize: fs), textAlign: pw.TextAlign.center)),
+      pw.Center(
+        child: _T(
+          st.receiptFooter,
+          style: pw.TextStyle(fontSize: fs),
+          textAlign: pw.TextAlign.center,
+        ),
+      ),
     ];
 
     final content = [...header, itemsTable, ...totals];
 
     if (roll) {
       final fmt = formatFor(paper);
-      doc.addPage(pw.Page(
-        pageFormat: PdfPageFormat(fmt.width, double.infinity,
-            marginLeft: fmt.marginLeft, marginRight: fmt.marginRight, marginTop: fmt.marginTop, marginBottom: fmt.marginBottom),
-        textDirection: pw.TextDirection.rtl,
-        build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: content),
-      ));
+      doc.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat(
+            fmt.width,
+            double.infinity,
+            marginLeft: fmt.marginLeft,
+            marginRight: fmt.marginRight,
+            marginTop: fmt.marginTop,
+            marginBottom: fmt.marginBottom,
+          ),
+          textDirection: pw.TextDirection.rtl,
+          build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: content),
+        ),
+      );
     } else {
-      doc.addPage(pw.MultiPage(
-        pageFormat: formatFor(paper),
-        textDirection: pw.TextDirection.rtl,
-        build: (_) => content,
-      ));
+      doc.addPage(
+        pw.MultiPage(pageFormat: formatFor(paper), textDirection: pw.TextDirection.rtl, build: (_) => content),
+      );
     }
     return doc.save();
   }
@@ -211,9 +250,11 @@ class AppPrinter {
     final bytes = await receiptPdf(d, copy: copy);
     final paper = AppState.I.s.settings.paperSize;
     final fmt = formatFor(paper);
-    await printPdf(bytes,
-        name: 'فاتورة ${d.sale.id}',
-        format: _isRoll(paper) ? PdfPageFormat(fmt.width, double.infinity, marginAll: 0) : fmt);
+    await printPdf(
+      bytes,
+      name: 'فاتورة ${d.sale.id}',
+      format: _isRoll(paper) ? PdfPageFormat(fmt.width, double.infinity, marginAll: 0) : fmt,
+    );
   }
 
   // ------------------------------------------------------------------
@@ -232,42 +273,52 @@ class AppPrinter {
     final theme = await _theme();
     final doc = pw.Document(theme: theme);
     final fmt = landscape ? PdfPageFormat.a4.landscape : PdfPageFormat.a4;
-    doc.addPage(pw.MultiPage(
-      pageFormat: fmt.copyWith(marginLeft: 28, marginRight: 28, marginTop: 28, marginBottom: 28),
-      textDirection: pw.TextDirection.rtl,
-      header: (ctx) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          _T(st.pharmacyName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-          _T(fmtDateTime(DateTime.now()), style: const pw.TextStyle(fontSize: 9)),
-        ]),
-        pw.SizedBox(height: 4),
-        _T(title, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
-        if (subtitle != null) _T(subtitle, style: const pw.TextStyle(fontSize: 9)),
-        pw.SizedBox(height: 8),
-      ]),
-      footer: (ctx) => pw.Align(
-        alignment: pw.Alignment.centerLeft,
-        child: _T('صفحة ${ctx.pageNumber} من ${ctx.pagesCount}', style: const pw.TextStyle(fontSize: 8)),
-      ),
-      build: (ctx) => [
-        pw.TableHelper.fromTextArray(
-          headers: headers.map(_fx).toList(),
-          data: [for (final r in rows) r.map(_fx).toList()],
-          headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
-          cellStyle: const pw.TextStyle(fontSize: 9),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
-          cellAlignment: pw.Alignment.centerRight,
-          headerAlignment: pw.Alignment.centerRight,
-          border: pw.TableBorder.all(width: 0.4, color: PdfColors.grey600),
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: fmt.copyWith(marginLeft: 28, marginRight: 28, marginTop: 28, marginBottom: 28),
+        textDirection: pw.TextDirection.rtl,
+        header: (ctx) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                _T(st.pharmacyName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                _T(fmtDateTime(DateTime.now()), style: const pw.TextStyle(fontSize: 9)),
+              ],
+            ),
+            pw.SizedBox(height: 4),
+            _T(title, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+            if (subtitle != null) _T(subtitle, style: const pw.TextStyle(fontSize: 9)),
+            pw.SizedBox(height: 8),
+          ],
         ),
-        if (summary.isNotEmpty) pw.SizedBox(height: 10),
-        for (final (k, v) in summary)
-          pw.Row(children: [
-            _T('$k: ', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-            _T(v, style: const pw.TextStyle(fontSize: 10)),
-          ]),
-      ],
-    ));
+        footer: (ctx) => pw.Align(
+          alignment: pw.Alignment.centerLeft,
+          child: _T('صفحة ${ctx.pageNumber} من ${ctx.pagesCount}', style: const pw.TextStyle(fontSize: 8)),
+        ),
+        build: (ctx) => [
+          pw.TableHelper.fromTextArray(
+            headers: headers.map(_fx).toList(),
+            data: [for (final r in rows) r.map(_fx).toList()],
+            headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+            cellAlignment: pw.Alignment.centerRight,
+            headerAlignment: pw.Alignment.centerRight,
+            border: pw.TableBorder.all(width: 0.4, color: PdfColors.grey600),
+          ),
+          if (summary.isNotEmpty) pw.SizedBox(height: 10),
+          for (final (k, v) in summary)
+            pw.Row(
+              children: [
+                _T('$k: ', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                _T(v, style: const pw.TextStyle(fontSize: 10)),
+              ],
+            ),
+        ],
+      ),
+    );
     return doc.save();
   }
 
@@ -280,13 +331,18 @@ class AppPrinter {
     bool landscape = false,
   }) async {
     final bytes = await tablePdf(
-        title: title, subtitle: subtitle, headers: headers, rows: rows, summary: summary, landscape: landscape);
+      title: title,
+      subtitle: subtitle,
+      headers: headers,
+      rows: rows,
+      summary: summary,
+      landscape: landscape,
+    );
     await Printing.layoutPdf(name: title, format: PdfPageFormat.a4, onLayout: (_) async => bytes);
   }
 
   /// حفظ PDF كملف (مثلاً لإرسال قائمة النواقص للمستودع عبر واتساب)
-  static Future<void> sharePdf(Uint8List bytes, String filename) =>
-      Printing.sharePdf(bytes: bytes, filename: filename);
+  static Future<void> sharePdf(Uint8List bytes, String filename) => Printing.sharePdf(bytes: bytes, filename: filename);
 
   // ------------------------------------------------------------------
   // تقرير إغلاق الوردية
@@ -302,16 +358,32 @@ class AppPrinter {
     final sh = sum.shift;
 
     pw.Widget kv(String k, String v, {bool bold = false}) => pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            _T(k, style: pw.TextStyle(fontSize: fs, fontWeight: bold ? pw.FontWeight.bold : null)),
-            _T(v, style: pw.TextStyle(fontSize: fs, fontWeight: bold ? pw.FontWeight.bold : null)),
-          ],
-        );
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        _T(
+          k,
+          style: pw.TextStyle(fontSize: fs, fontWeight: bold ? pw.FontWeight.bold : null),
+        ),
+        _T(
+          v,
+          style: pw.TextStyle(fontSize: fs, fontWeight: bold ? pw.FontWeight.bold : null),
+        ),
+      ],
+    );
 
     final content = <pw.Widget>[
-      pw.Center(child: _T(st.pharmacyName, style: pw.TextStyle(fontSize: fs + 4, fontWeight: pw.FontWeight.bold))),
-      pw.Center(child: _T('تقرير تسليم الدرج', style: pw.TextStyle(fontSize: fs + 2, fontWeight: pw.FontWeight.bold))),
+      pw.Center(
+        child: _T(
+          st.pharmacyName,
+          style: pw.TextStyle(fontSize: fs + 4, fontWeight: pw.FontWeight.bold),
+        ),
+      ),
+      pw.Center(
+        child: _T(
+          'تقرير تسليم الدرج',
+          style: pw.TextStyle(fontSize: fs + 2, fontWeight: pw.FontWeight.bold),
+        ),
+      ),
       pw.SizedBox(height: 4),
       kv('رقم الوردية', '${sh.id}'),
       kv('الصيدلي', userName),
@@ -323,10 +395,15 @@ class AppPrinter {
       kv('إجمالي المبيعات', fmtSyp(sum.salesTotalSyp)),
       if (sum.debtSalesSyp > 0) kv('منها بالدين', fmtSyp(sum.debtSalesSyp)),
       pw.Divider(thickness: 0.6),
-      _T('حركات الدرج', style: pw.TextStyle(fontSize: fs, fontWeight: pw.FontWeight.bold)),
+      _T(
+        'حركات الدرج',
+        style: pw.TextStyle(fontSize: fs, fontWeight: pw.FontWeight.bold),
+      ),
       for (final e in sum.byType.entries)
-        kv(CashTypes.label(e.key),
-            [if (e.value.syp != 0) fmtSyp(e.value.syp), if (e.value.usd != 0) fmtUsd(e.value.usd)].join(' / ')),
+        kv(
+          CashTypes.label(e.key),
+          [if (e.value.syp != 0) fmtSyp(e.value.syp), if (e.value.usd != 0) fmtUsd(e.value.usd)].join(' / '),
+        ),
       pw.Divider(thickness: 0.6),
       kv('المتوقع ليرة', fmtSyp(sh.expectedSyp ?? sum.balance.syp), bold: true),
       kv('المتوقع دولار', fmtUsd(sh.expectedUsd ?? sum.balance.usd), bold: true),
@@ -338,21 +415,32 @@ class AppPrinter {
       ],
       if (sh.note != null && sh.note!.isNotEmpty) _T('ملاحظة: ${sh.note}', style: pw.TextStyle(fontSize: fs)),
       pw.SizedBox(height: 16),
-      pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-        _T('توقيع المسلِّم: ........', style: pw.TextStyle(fontSize: fs)),
-        _T('توقيع المستلم: ........', style: pw.TextStyle(fontSize: fs)),
-      ]),
+      pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          _T('توقيع المسلِّم: ........', style: pw.TextStyle(fontSize: fs)),
+          _T('توقيع المستلم: ........', style: pw.TextStyle(fontSize: fs)),
+        ],
+      ),
     ];
 
     final fmt = formatFor(paper);
-    doc.addPage(pw.Page(
-      pageFormat: roll
-          ? PdfPageFormat(fmt.width, double.infinity,
-              marginLeft: fmt.marginLeft, marginRight: fmt.marginRight, marginTop: fmt.marginTop, marginBottom: fmt.marginBottom)
-          : fmt,
-      textDirection: pw.TextDirection.rtl,
-      build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: content),
-    ));
+    doc.addPage(
+      pw.Page(
+        pageFormat: roll
+            ? PdfPageFormat(
+                fmt.width,
+                double.infinity,
+                marginLeft: fmt.marginLeft,
+                marginRight: fmt.marginRight,
+                marginTop: fmt.marginTop,
+                marginBottom: fmt.marginBottom,
+              )
+            : fmt,
+        textDirection: pw.TextDirection.rtl,
+        build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: content),
+      ),
+    );
     await printPdf(await doc.save(), name: 'وردية ${sh.id}');
   }
 

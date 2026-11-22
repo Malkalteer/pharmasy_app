@@ -30,13 +30,7 @@ class PaymentInput {
   final Customer? customer;
   final String? note;
 
-  const PaymentInput({
-    this.discountSyp = 0,
-    this.paidSyp = 0,
-    this.paidUsd = 0,
-    this.customer,
-    this.note,
-  });
+  const PaymentInput({this.discountSyp = 0, this.paidSyp = 0, this.paidUsd = 0, this.customer, this.note});
 }
 
 /// حساب إجماليات الفاتورة (يُستخدم في الواجهة وعند الحفظ)
@@ -48,8 +42,7 @@ class CheckoutTotals {
   final double changeSyp;
   final double debtSyp;
 
-  CheckoutTotals._(this.subtotalSyp, this.discountSyp, this.totalSyp,
-      this.paidTotalSyp, this.changeSyp, this.debtSyp);
+  CheckoutTotals._(this.subtotalSyp, this.discountSyp, this.totalSyp, this.paidTotalSyp, this.changeSyp, this.debtSyp);
 
   factory CheckoutTotals.compute({
     required List<CartLine> lines,
@@ -126,7 +119,8 @@ class SalesService {
         final newDebt = bal + sypToUsd(t.debtSyp, rate);
         if (newDebt > customer.creditLimitUsd! + 0.0001) {
           throw BusinessException(
-              'تجاوز سقف الدين للزبون (${fmtUsd(customer.creditLimitUsd!)}). الدين الحالي ${fmtUsd(bal)}');
+            'تجاوز سقف الدين للزبون (${fmtUsd(customer.creditLimitUsd!)}). الدين الحالي ${fmtUsd(bal)}',
+          );
         }
       }
     }
@@ -140,7 +134,8 @@ class SalesService {
           alloc = await inventory.allocate(l.medicine.id, l.baseQuantity);
         } on InsufficientStock catch (e) {
           throw BusinessException(
-              'الكمية غير كافية من "${l.medicine.name}". المتوفر: ${l.medicine.describeQty(e.available)}');
+            'الكمية غير كافية من "${l.medicine.name}". المتوفر: ${l.medicine.describeQty(e.available)}',
+          );
         }
         double cost = 0;
         for (final a in alloc) {
@@ -151,44 +146,56 @@ class SalesService {
         prepared.add((l, alloc, cost));
       }
 
-      final id = await db.into(db.sales).insert(SalesCompanion.insert(
-            shiftId: shift.id,
-            userId: actor.id,
-            customerId: Value(customer?.id),
-            rate: rate,
-            subtotalSyp: t.subtotalSyp,
-            discountSyp: Value(t.discountSyp),
-            totalSyp: t.totalSyp,
-            totalUsd: sypToUsd(t.totalSyp, rate),
-            costUsd: Value(roundTo(totalCost, 6)),
-            paidSyp: Value(payment.paidSyp),
-            paidUsd: Value(payment.paidUsd),
-            changeSyp: Value(t.changeSyp),
-            debtSyp: Value(t.debtSyp),
-            note: Value(payment.note),
-          ));
+      final id = await db
+          .into(db.sales)
+          .insert(
+            SalesCompanion.insert(
+              shiftId: shift.id,
+              userId: actor.id,
+              customerId: Value(customer?.id),
+              rate: rate,
+              subtotalSyp: t.subtotalSyp,
+              discountSyp: Value(t.discountSyp),
+              totalSyp: t.totalSyp,
+              totalUsd: sypToUsd(t.totalSyp, rate),
+              costUsd: Value(roundTo(totalCost, 6)),
+              paidSyp: Value(payment.paidSyp),
+              paidUsd: Value(payment.paidUsd),
+              changeSyp: Value(t.changeSyp),
+              debtSyp: Value(t.debtSyp),
+              note: Value(payment.note),
+            ),
+          );
 
       for (final (l, alloc, cost) in prepared) {
-        final itemId = await db.into(db.saleItems).insert(SaleItemsCompanion.insert(
-              saleId: id,
-              medicineId: l.medicine.id,
-              medicineName: l.medicine.name,
-              unit: l.unit.index,
-              unitLabel: l.medicine.unitLabel(l.unit),
-              quantity: l.quantity,
-              baseQuantity: l.baseQuantity,
-              unitPriceUsd: l.unitPriceUsd,
-              unitPriceSyp: l.unitPriceSyp(rate, rounding),
-              totalSyp: l.totalSyp(rate, rounding),
-              costUsd: roundTo(cost, 6),
-            ));
+        final itemId = await db
+            .into(db.saleItems)
+            .insert(
+              SaleItemsCompanion.insert(
+                saleId: id,
+                medicineId: l.medicine.id,
+                medicineName: l.medicine.name,
+                unit: l.unit.index,
+                unitLabel: l.medicine.unitLabel(l.unit),
+                quantity: l.quantity,
+                baseQuantity: l.baseQuantity,
+                unitPriceUsd: l.unitPriceUsd,
+                unitPriceSyp: l.unitPriceSyp(rate, rounding),
+                totalSyp: l.totalSyp(rate, rounding),
+                costUsd: roundTo(cost, 6),
+              ),
+            );
         for (final a in alloc) {
-          await db.into(db.saleItemBatches).insert(SaleItemBatchesCompanion.insert(
-                saleItemId: itemId,
-                batchId: a.batch.id,
-                baseQuantity: a.quantity,
-                costUsd: l.medicine.costOf(a.quantity, a.batch.costUsdPerBox),
-              ));
+          await db
+              .into(db.saleItemBatches)
+              .insert(
+                SaleItemBatchesCompanion.insert(
+                  saleItemId: itemId,
+                  batchId: a.batch.id,
+                  baseQuantity: a.quantity,
+                  costUsd: l.medicine.costOf(a.quantity, a.batch.costUsdPerBox),
+                ),
+              );
         }
       }
 
@@ -216,16 +223,19 @@ class SalesService {
           note: 'فاتورة رقم $id',
         );
       }
-      await audit.log(actor, AuditActions.saleCompleted,
-          entity: 'sale',
-          entityId: id,
-          details: {
-            'total': t.totalSyp,
-            'items': active.length,
-            if (t.discountSyp > 0) 'discount': t.discountSyp,
-            if (t.debtSyp > 0) 'debt': t.debtSyp,
-            if (customer != null) 'customer': customer.name,
-          });
+      await audit.log(
+        actor,
+        AuditActions.saleCompleted,
+        entity: 'sale',
+        entityId: id,
+        details: {
+          'total': t.totalSyp,
+          'items': active.length,
+          if (t.discountSyp > 0) 'discount': t.discountSyp,
+          if (t.debtSyp > 0) 'debt': t.debtSyp,
+          if (customer != null) 'customer': customer.name,
+        },
+      );
       return id;
     });
     return (await details(saleId))!;
@@ -234,10 +244,11 @@ class SalesService {
   Future<SaleDetails?> details(int saleId) async {
     final s = await (db.select(db.sales)..where((t) => t.id.equals(saleId))).getSingleOrNull();
     if (s == null) return null;
-    final items = await (db.select(db.saleItems)
-          ..where((t) => t.saleId.equals(saleId))
-          ..orderBy([(t) => OrderingTerm.asc(t.id)]))
-        .get();
+    final items =
+        await (db.select(db.saleItems)
+              ..where((t) => t.saleId.equals(saleId))
+              ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+            .get();
     final u = await (db.select(db.users)..where((t) => t.id.equals(s.userId))).getSingleOrNull();
     final c = s.customerId == null ? null : await customers.byId(s.customerId!);
     return SaleDetails(s, items, u, c);
@@ -278,35 +289,53 @@ class SalesService {
     if (!actor.can(Permission.voidSales)) throw PermissionDenied(Permission.voidSales);
     if (sale.status != 'completed') throw BusinessException('الفاتورة ملغاة مسبقاً');
     if (reason.trim().isEmpty) throw BusinessException('يرجى كتابة سبب الإلغاء');
-    final returned = await db.customSelect(
-      'SELECT COUNT(*) AS c FROM customer_returns WHERE sale_id = ?',
-      variables: [Variable.withInt(sale.id)],
-      readsFrom: {db.customerReturns},
-    ).getSingle();
+    final returned = await db
+        .customSelect(
+          'SELECT COUNT(*) AS c FROM customer_returns WHERE sale_id = ?',
+          variables: [Variable.withInt(sale.id)],
+          readsFrom: {db.customerReturns},
+        )
+        .getSingle();
     if (returned.read<int>('c') > 0) {
       throw BusinessException('لا يمكن إلغاء فاتورة عليها مرتجعات. استخدم المرتجع للكمية المتبقية');
     }
     await db.transaction(() async {
       final items = await (db.select(db.saleItems)..where((t) => t.saleId.equals(sale.id))).get();
       for (final it in items) {
-        final allocs = await (db.select(db.saleItemBatches)
-              ..where((t) => t.saleItemId.equals(it.id)))
-            .get();
+        final allocs = await (db.select(db.saleItemBatches)..where((t) => t.saleItemId.equals(it.id))).get();
         for (final a in allocs) {
           await inventory.changeBatchQty(a.batchId, a.baseQuantity - a.returnedBase);
         }
       }
       if (sale.paidSyp > 0) {
-        await shifts.addMovementRaw(currentShift.id, actor.id, CashTypes.voidSale, currencySyp, -sale.paidSyp,
-            refId: sale.id);
+        await shifts.addMovementRaw(
+          currentShift.id,
+          actor.id,
+          CashTypes.voidSale,
+          currencySyp,
+          -sale.paidSyp,
+          refId: sale.id,
+        );
       }
       if (sale.paidUsd > 0) {
-        await shifts.addMovementRaw(currentShift.id, actor.id, CashTypes.voidSale, currencyUsd, -sale.paidUsd,
-            refId: sale.id);
+        await shifts.addMovementRaw(
+          currentShift.id,
+          actor.id,
+          CashTypes.voidSale,
+          currencyUsd,
+          -sale.paidUsd,
+          refId: sale.id,
+        );
       }
       if (sale.changeSyp > 0) {
-        await shifts.addMovementRaw(currentShift.id, actor.id, CashTypes.voidSale, currencySyp, sale.changeSyp,
-            refId: sale.id);
+        await shifts.addMovementRaw(
+          currentShift.id,
+          actor.id,
+          CashTypes.voidSale,
+          currencySyp,
+          sale.changeSyp,
+          refId: sale.id,
+        );
       }
       if (sale.debtSyp > 0 && sale.customerId != null) {
         await customers.addTransaction(
@@ -322,14 +351,21 @@ class SalesService {
           note: 'إلغاء فاتورة رقم ${sale.id}',
         );
       }
-      await (db.update(db.sales)..where((t) => t.id.equals(sale.id))).write(SalesCompanion(
-            status: const Value('voided'),
-            voidedById: Value(actor.id),
-            voidedAt: Value(DateTime.now()),
-            voidReason: Value(reason.trim()),
-          ));
-      await audit.log(actor, AuditActions.saleVoided,
-          entity: 'sale', entityId: sale.id, details: {'total': sale.totalSyp, 'reason': reason.trim()});
+      await (db.update(db.sales)..where((t) => t.id.equals(sale.id))).write(
+        SalesCompanion(
+          status: const Value('voided'),
+          voidedById: Value(actor.id),
+          voidedAt: Value(DateTime.now()),
+          voidReason: Value(reason.trim()),
+        ),
+      );
+      await audit.log(
+        actor,
+        AuditActions.saleVoided,
+        entity: 'sale',
+        entityId: sale.id,
+        details: {'total': sale.totalSyp, 'reason': reason.trim()},
+      );
     });
   }
 }

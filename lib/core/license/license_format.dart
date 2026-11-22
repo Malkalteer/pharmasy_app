@@ -32,26 +32,26 @@ class LicenseData {
   });
 
   Map<String, dynamic> toJson() => {
-        'v': 1,
-        'mid': machineId,
-        'name': customer,
-        'type': type,
-        'exp': expiresAt == null ? null : _d(expiresAt!),
-        'iat': _d(issuedAt),
-        'sn': serial,
-      };
+    'v': 1,
+    'mid': machineId,
+    'name': customer,
+    'type': type,
+    'exp': expiresAt == null ? null : _d(expiresAt!),
+    'iat': _d(issuedAt),
+    'sn': serial,
+  };
 
   static String _d(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   factory LicenseData.fromJson(Map<String, dynamic> j) => LicenseData(
-        machineId: j['mid'] as String,
-        customer: j['name'] as String? ?? '',
-        type: j['type'] as String? ?? 'lifetime',
-        expiresAt: j['exp'] == null ? null : DateTime.parse(j['exp'] as String),
-        issuedAt: DateTime.parse(j['iat'] as String),
-        serial: j['sn'] as String? ?? '',
-      );
+    machineId: j['mid'] as String,
+    customer: j['name'] as String? ?? '',
+    type: j['type'] as String? ?? 'lifetime',
+    expiresAt: j['exp'] == null ? null : DateTime.parse(j['exp'] as String),
+    issuedAt: DateTime.parse(j['iat'] as String),
+    serial: j['sn'] as String? ?? '',
+  );
 
   bool isExpired(DateTime now) =>
       expiresAt != null && now.isAfter(DateTime(expiresAt!.year, expiresAt!.month, expiresAt!.day, 23, 59, 59));
@@ -78,10 +78,7 @@ Future<LicenseData?> verifyLicense(String license, List<int> publicKey) async {
     final sigBytes = _unb64(parts[2]);
     final ok = await Ed25519().verify(
       payload,
-      signature: Signature(
-        sigBytes,
-        publicKey: SimplePublicKey(publicKey, type: KeyPairType.ed25519),
-      ),
+      signature: Signature(sigBytes, publicKey: SimplePublicKey(publicKey, type: KeyPairType.ed25519)),
     );
     if (!ok) return null;
     return LicenseData.fromJson(jsonDecode(utf8.decode(payload)) as Map<String, dynamic>);
@@ -106,5 +103,4 @@ String formatMachineCode(String hex) {
   return [for (var i = 0; i < 20; i += 4) s.substring(i, i + 4)].join('-');
 }
 
-String normalizeMachineCode(String code) =>
-    code.toUpperCase().replaceAll(RegExp('[^0-9A-F]'), '');
+String normalizeMachineCode(String code) => code.toUpperCase().replaceAll(RegExp('[^0-9A-F]'), '');

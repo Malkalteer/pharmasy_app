@@ -26,8 +26,8 @@ class RoundingConfig {
     return roundTo(r * step, 2);
   }
 
-  static RoundingMode parseMode(String? s) => RoundingMode.values
-      .firstWhere((m) => m.name == s, orElse: () => RoundingMode.nearest);
+  static RoundingMode parseMode(String? s) =>
+      RoundingMode.values.firstWhere((m) => m.name == s, orElse: () => RoundingMode.nearest);
 }
 
 double roundTo(double v, int decimals) {
@@ -39,11 +39,9 @@ double roundTo(double v, int decimals) {
 }
 
 /// تحويل سعر بالدولار إلى الليرة مع التقريب
-double usdToSyp(double usd, double rate, RoundingConfig rounding) =>
-    rounding.apply(usd * rate);
+double usdToSyp(double usd, double rate, RoundingConfig rounding) => rounding.apply(usd * rate);
 
-double sypToUsd(double syp, double rate) =>
-    rate <= 0 ? 0 : roundTo(syp / rate, 6);
+double sypToUsd(double syp, double rate) => rate <= 0 ? 0 : roundTo(syp / rate, 6);
 
 final _sypFmt = NumberFormat('#,##0.##', 'en_US');
 final _usdFmt = NumberFormat('#,##0.00##', 'en_US');

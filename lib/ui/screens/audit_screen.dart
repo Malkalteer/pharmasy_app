@@ -75,70 +75,84 @@ class _AuditScreenState extends State<AuditScreen> {
   }
 
   bool _important(String action) =>
-      action.contains('إلغاء') || action.contains('سعر') || action.contains('جرد') || action.contains('فاشلة') || action.contains('إتلاف');
+      action.contains('إلغاء') ||
+      action.contains('سعر') ||
+      action.contains('جرد') ||
+      action.contains('فاشلة') ||
+      action.contains('إتلاف');
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        SectionTitle('سجل العمليات', icon: Icons.history),
-        DateRangeBar(
-          from: _from,
-          to: _to,
-          onChanged: (f, t) {
-            _from = f;
-            _to = t;
-            _load();
-          },
-        ),
-        const SizedBox(height: 10),
-        Row(children: [
-          SizedBox(
-            width: 300,
-            child: TextField(
-              controller: _q,
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'بحث في العمليات'),
-              onChanged: (_) => _load(),
-            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SectionTitle('سجل العمليات', icon: Icons.history),
+          DateRangeBar(
+            from: _from,
+            to: _to,
+            onChanged: (f, t) {
+              _from = f;
+              _to = t;
+              _load();
+            },
           ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 220,
-            child: DropdownButtonFormField<int?>(
-              initialValue: _userId,
-              decoration: const InputDecoration(labelText: 'المستخدم'),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('الكل')),
-                for (final u in _users) DropdownMenuItem(value: u.id, child: Text(u.fullName)),
-              ],
-              onChanged: (v) {
-                _userId = v;
-                _load();
-              },
-            ),
-          ),
-          const Spacer(),
-          Text('${_logs.length} عملية'),
-        ]),
-        const SizedBox(height: 10),
-        Expanded(
-          child: SimpleTable(
-            columns: const ['الوقت', 'المستخدم', 'العملية', 'المرجع', 'التفاصيل'],
-            rows: [
-              for (final l in _logs)
-                [
-                  Text(fmtDateTime(l.createdAt)),
-                  Text(l.userName ?? '-'),
-                  Text(l.action,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: _important(l.action) ? kDanger : null)),
-                  Text(l.entityId == null ? '' : '#${l.entityId}'),
-                  SizedBox(width: 520, child: Text(_details(l.details), maxLines: 3, overflow: TextOverflow.ellipsis)),
-                ],
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              SizedBox(
+                width: 300,
+                child: TextField(
+                  controller: _q,
+                  decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'بحث في العمليات'),
+                  onChanged: (_) => _load(),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 220,
+                child: DropdownButtonFormField<int?>(
+                  initialValue: _userId,
+                  decoration: const InputDecoration(labelText: 'المستخدم'),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('الكل')),
+                    for (final u in _users) DropdownMenuItem(value: u.id, child: Text(u.fullName)),
+                  ],
+                  onChanged: (v) {
+                    _userId = v;
+                    _load();
+                  },
+                ),
+              ),
+              const Spacer(),
+              Text('${_logs.length} عملية'),
             ],
           ),
-        ),
-      ]),
+          const SizedBox(height: 10),
+          Expanded(
+            child: SimpleTable(
+              columns: const ['الوقت', 'المستخدم', 'العملية', 'المرجع', 'التفاصيل'],
+              rows: [
+                for (final l in _logs)
+                  [
+                    Text(fmtDateTime(l.createdAt)),
+                    Text(l.userName ?? '-'),
+                    Text(
+                      l.action,
+                      style: TextStyle(fontWeight: FontWeight.w600, color: _important(l.action) ? kDanger : null),
+                    ),
+                    Text(l.entityId == null ? '' : '#${l.entityId}'),
+                    SizedBox(
+                      width: 520,
+                      child: Text(_details(l.details), maxLines: 3, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

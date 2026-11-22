@@ -17,20 +17,24 @@ String errorText(Object e) {
 
 void showError(BuildContext context, Object e) {
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(errorText(e), style: const TextStyle(fontSize: 15)),
-    backgroundColor: kDanger,
-    duration: const Duration(seconds: 5),
-  ));
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(errorText(e), style: const TextStyle(fontSize: 15)),
+      backgroundColor: kDanger,
+      duration: const Duration(seconds: 5),
+    ),
+  );
 }
 
 void showOk(BuildContext context, String msg) {
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(msg, style: const TextStyle(fontSize: 15)),
-    backgroundColor: kSuccess,
-    duration: const Duration(seconds: 3),
-  ));
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(msg, style: const TextStyle(fontSize: 15)),
+      backgroundColor: kSuccess,
+      duration: const Duration(seconds: 3),
+    ),
+  );
 }
 
 /// تنفيذ عملية مع عرض الخطأ تلقائياً
@@ -45,8 +49,13 @@ Future<T?> guard<T>(BuildContext context, Future<T> Function() fn, {String? succ
   }
 }
 
-Future<bool> confirm(BuildContext context, String title, String message,
-    {String ok = 'تأكيد', bool danger = false}) async {
+Future<bool> confirm(
+  BuildContext context,
+  String title,
+  String message, {
+  String ok = 'تأكيد',
+  bool danger = false,
+}) async {
   final r = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -66,8 +75,14 @@ Future<bool> confirm(BuildContext context, String title, String message,
 }
 
 /// نافذة إدخال نص بسيطة
-Future<String?> promptText(BuildContext context, String title,
-    {String? label, String? initial, bool required = true, bool obscure = false}) async {
+Future<String?> promptText(
+  BuildContext context,
+  String title, {
+  String? label,
+  String? initial,
+  bool required = true,
+  bool obscure = false,
+}) async {
   final c = TextEditingController(text: initial);
   final r = await showDialog<String>(
     context: context,
@@ -131,9 +146,7 @@ class NumField extends StatelessWidget {
       keyboardType: TextInputType.numberWithOptions(decimal: decimal),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.right,
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(decimal ? r'[0-9٠-٩.,٫\-]' : r'[0-9٠-٩\-]')),
-      ],
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(decimal ? r'[0-9٠-٩.,٫\-]' : r'[0-9٠-٩\-]'))],
       decoration: InputDecoration(labelText: label, suffixText: suffix, helperText: helper),
       onChanged: onChanged,
       onSubmitted: onSubmitted,
@@ -151,12 +164,14 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
-      child: Row(children: [
-        if (icon != null) ...[Icon(icon, color: kPrimary, size: 28), const SizedBox(width: 10)],
-        Text(text, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-        const Spacer(),
-        Wrap(spacing: 8, runSpacing: 8, children: actions),
-      ]),
+      child: Row(
+        children: [
+          if (icon != null) ...[Icon(icon, color: kPrimary, size: 28), const SizedBox(width: 10)],
+          Text(text, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+          const Spacer(),
+          Wrap(spacing: 8, runSpacing: 8, children: actions),
+        ],
+      ),
     );
   }
 }
@@ -189,22 +204,27 @@ class StatCard extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: color.withValues(alpha: 0.12),
-                child: Icon(icon, color: color),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: TextStyle(color: Colors.grey.shade700)),
-                  const SizedBox(height: 4),
-                  Text(value, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
-                  if (sub != null) Text(sub!, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                ]),
-              ),
-            ]),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: color.withValues(alpha: 0.12),
+                  child: Icon(icon, color: color),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: TextStyle(color: Colors.grey.shade700)),
+                      const SizedBox(height: 4),
+                      Text(value, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+                      if (sub != null) Text(sub!, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -219,15 +239,18 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 56, color: Colors.grey.shade400),
-            const SizedBox(height: 10),
-            Text(text, style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
-          ]),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 56, color: Colors.grey.shade400),
+          const SizedBox(height: 10),
+          Text(text, style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+        ],
+      ),
+    ),
+  );
 }
 
 class Badge2 extends StatelessWidget {
@@ -237,10 +260,13 @@ class Badge2 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
-        child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
+    child: Text(
+      text,
+      style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),
+    ),
+  );
 }
 
 /// جدول بسيط قابل للتمرير مبني على DataTable
@@ -308,28 +334,34 @@ class DateRangeBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = dayStart(DateTime.now());
-    Widget chip(String label, DateTime f, DateTime t) => ActionChip(label: Text(label), onPressed: () => onChanged(f, t));
-    return Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-      chip('اليوم', today, today.add(const Duration(days: 1))),
-      chip('أمس', today.subtract(const Duration(days: 1)), today),
-      chip('آخر 7 أيام', today.subtract(const Duration(days: 6)), today.add(const Duration(days: 1))),
-      chip('هذا الشهر', DateTime(today.year, today.month), DateTime(today.year, today.month + 1)),
-      chip('الشهر الماضي', DateTime(today.year, today.month - 1), DateTime(today.year, today.month)),
-      chip('هذه السنة', DateTime(today.year), DateTime(today.year + 1)),
-      OutlinedButton.icon(
-        icon: const Icon(Icons.date_range),
-        label: Text('${fmtDate(from)} - ${fmtDate(to.subtract(const Duration(days: 1)))}'),
-        onPressed: () async {
-          final r = await showDateRangePicker(
-            context: context,
-            firstDate: DateTime(2020),
-            lastDate: DateTime(2100),
-            initialDateRange: DateTimeRange(start: from, end: to.subtract(const Duration(days: 1))),
-          );
-          if (r != null) onChanged(dayStart(r.start), dayStart(r.end).add(const Duration(days: 1)));
-        },
-      ),
-    ]);
+    Widget chip(String label, DateTime f, DateTime t) =>
+        ActionChip(label: Text(label), onPressed: () => onChanged(f, t));
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        chip('اليوم', today, today.add(const Duration(days: 1))),
+        chip('أمس', today.subtract(const Duration(days: 1)), today),
+        chip('آخر 7 أيام', today.subtract(const Duration(days: 6)), today.add(const Duration(days: 1))),
+        chip('هذا الشهر', DateTime(today.year, today.month), DateTime(today.year, today.month + 1)),
+        chip('الشهر الماضي', DateTime(today.year, today.month - 1), DateTime(today.year, today.month)),
+        chip('هذه السنة', DateTime(today.year), DateTime(today.year + 1)),
+        OutlinedButton.icon(
+          icon: const Icon(Icons.date_range),
+          label: Text('${fmtDate(from)} - ${fmtDate(to.subtract(const Duration(days: 1)))}'),
+          onPressed: () async {
+            final r = await showDateRangePicker(
+              context: context,
+              firstDate: DateTime(2020),
+              lastDate: DateTime(2100),
+              initialDateRange: DateTimeRange(start: from, end: to.subtract(const Duration(days: 1))),
+            );
+            if (r != null) onChanged(dayStart(r.start), dayStart(r.end).add(const Duration(days: 1)));
+          },
+        ),
+      ],
+    );
   }
 }
 
@@ -342,18 +374,18 @@ class MoneyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(fmtSyp(roundTo(usd * rate, 0)), style: style),
-          Text(fmtUsd(roundTo(usd, 2)), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(fmtSyp(roundTo(usd * rate, 0)), style: style),
+      Text(fmtUsd(roundTo(usd, 2)), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+    ],
+  );
 }
 
 Future<DateTime?> pickDate(BuildContext context, {DateTime? initial}) => showDatePicker(
-      context: context,
-      initialDate: initial ?? DateTime.now(),
-      firstDate: DateTime(2015),
-      lastDate: DateTime(2100),
-    );
+  context: context,
+  initialDate: initial ?? DateTime.now(),
+  firstDate: DateTime(2015),
+  lastDate: DateTime(2100),
+);

@@ -94,13 +94,16 @@ class _RootScreenState extends State<RootScreen> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.error_outline, size: 64, color: kDanger),
-              const SizedBox(height: 12),
-              const Text('تعذّر فتح قاعدة البيانات', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              SelectableText(st.startupError!, textAlign: TextAlign.center),
-            ]),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: kDanger),
+                const SizedBox(height: 12),
+                const Text('تعذّر فتح قاعدة البيانات', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                SelectableText(st.startupError!, textAlign: TextAlign.center),
+              ],
+            ),
           ),
         ),
       );

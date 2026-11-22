@@ -35,10 +35,10 @@ extension MedicineUnits on Medicine {
 
   /// الوحدات المسموح بيعها لهذا الدواء
   List<SaleUnit> get sellableUnits => [
-        SaleUnit.box,
-        if (allowStripSale && _strips > 1) SaleUnit.strip,
-        if (allowUnitSale && basePerBox > 1) SaleUnit.unit,
-      ];
+    SaleUnit.box,
+    if (allowStripSale && _strips > 1) SaleUnit.strip,
+    if (allowUnitSale && basePerBox > 1) SaleUnit.unit,
+  ];
 
   /// سعر الوحدة بالدولار
   double priceUsdFor(SaleUnit u) {
@@ -72,6 +72,5 @@ extension MedicineUnits on Medicine {
   double boxesOf(int base) => base / basePerBox;
 
   /// تكلفة كمية (بأصغر وحدة) من دفعة معينة
-  double costOf(int base, double costUsdPerBox) =>
-      roundTo(costUsdPerBox * base / basePerBox, 6);
+  double costOf(int base, double costUsdPerBox) => roundTo(costUsdPerBox * base / basePerBox, 6);
 }

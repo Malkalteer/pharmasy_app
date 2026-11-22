@@ -26,15 +26,15 @@ void main() {
   setUp(() async {
     s = Services(AppDatabase.memory());
     await s.settings.load();
-    owner = await s.users.create(
-        actor: null, username: 'admin', fullName: 'المالك', password: '1234', role: roleOwner);
+    owner = await s.users.create(actor: null, username: 'admin', fullName: 'المالك', password: '1234', role: roleOwner);
     pharmacist = await s.users.create(
-        actor: owner,
-        username: 'ahmad',
-        fullName: 'أحمد',
-        password: '1234',
-        role: rolePharmacist,
-        permissions: {Permission.returns});
+      actor: owner,
+      username: 'ahmad',
+      fullName: 'أحمد',
+      password: '1234',
+      role: rolePharmacist,
+      permissions: {Permission.returns},
+    );
   });
 
   tearDown(() => s.db.close());
@@ -46,21 +46,20 @@ void main() {
     int strips = 2,
     int perStrip = 10,
     String? barcode,
-  }) =>
-      s.inventory.saveMedicine(
-        actor: owner,
-        data: MedicinesCompanion.insert(
-          name: name,
-          scientificName: Value(sci),
-          barcode: Value(barcode),
-          priceUsd: Value(price),
-          stripsPerBox: Value(strips),
-          unitsPerStrip: Value(perStrip),
-          allowStripSale: const Value(true),
-          allowUnitSale: const Value(true),
-          minStockBoxes: const Value(5),
-        ),
-      );
+  }) => s.inventory.saveMedicine(
+    actor: owner,
+    data: MedicinesCompanion.insert(
+      name: name,
+      scientificName: Value(sci),
+      barcode: Value(barcode),
+      priceUsd: Value(price),
+      stripsPerBox: Value(strips),
+      unitsPerStrip: Value(perStrip),
+      allowStripSale: const Value(true),
+      allowUnitSale: const Value(true),
+      minStockBoxes: const Value(5),
+    ),
+  );
 
   test('rounding and currency conversion', () {
     expect(usdToSyp(2, 150, const RoundingConfig(step: 1)), 300);
@@ -88,11 +87,26 @@ void main() {
     final m = await addMed(barcode: '123');
     final now = DateTime.now();
     final lateBatch = await s.inventory.addBatch(
-        actor: owner, medicine: m, baseQuantity: 40, expiryDate: DateTime(now.year + 2), costUsdPerBox: 1);
+      actor: owner,
+      medicine: m,
+      baseQuantity: 40,
+      expiryDate: DateTime(now.year + 2),
+      costUsdPerBox: 1,
+    );
     final soon = await s.inventory.addBatch(
-        actor: owner, medicine: m, baseQuantity: 20, expiryDate: DateTime(now.year + 1), costUsdPerBox: 1.2);
+      actor: owner,
+      medicine: m,
+      baseQuantity: 20,
+      expiryDate: DateTime(now.year + 1),
+      costUsdPerBox: 1.2,
+    );
     await s.inventory.addBatch(
-        actor: owner, medicine: m, baseQuantity: 100, expiryDate: DateTime(now.year - 1), costUsdPerBox: 1);
+      actor: owner,
+      medicine: m,
+      baseQuantity: 100,
+      expiryDate: DateTime(now.year - 1),
+      costUsdPerBox: 1,
+    );
 
     final st = await s.inventory.stockOf(m.id);
     expect(st!.available, 60);
@@ -103,7 +117,10 @@ void main() {
     final res = await s.sales.checkout(
       actor: pharmacist,
       shift: shift,
-      lines: [CartLine(m, unit: SaleUnit.box), CartLine(m, unit: SaleUnit.strip)],
+      lines: [
+        CartLine(m, unit: SaleUnit.box),
+        CartLine(m, unit: SaleUnit.strip),
+      ],
       payment: const PaymentInput(paidSyp: 500),
       rate: rate,
       rounding: rounding,
@@ -197,12 +214,17 @@ void main() {
     expect(ret.refundSyp, 0);
     expect(await s.customers.balanceUsd(c.id), closeTo(100 / 150, 1e-6));
     expect((await s.inventory.stockOf(m.id))!.available, 80);
-    expect(ReturnsService.returnableQty(
-        (await s.sales.details(res.sale.id))!.items.first), 1);
+    expect(ReturnsService.returnableQty((await s.sales.details(res.sale.id))!.items.first), 1);
 
     // تحصيل الباقي بالليرة
     await s.customers.receivePayment(
-        actor: owner, shift: shift, customer: c, currency: currencySyp, amount: 100, rate: rate);
+      actor: owner,
+      shift: shift,
+      customer: c,
+      currency: currencySyp,
+      amount: 100,
+      rate: rate,
+    );
     expect(await s.customers.balanceUsd(c.id), closeTo(0, 1e-6));
   });
 
@@ -230,7 +252,12 @@ void main() {
   test('shift close records shortage and zeroes drawer', () async {
     final shift = await s.shifts.open(user: pharmacist, openingSyp: 1000, openingUsd: 10);
     final closed = await s.shifts.close(
-        user: pharmacist, shift: shift, actualSyp: 900, actualUsd: 10, receivedById: owner.id);
+      user: pharmacist,
+      shift: shift,
+      actualSyp: 900,
+      actualUsd: 10,
+      receivedById: owner.id,
+    );
     expect(closed.diffSyp, -100);
     expect(closed.diffUsd, 0);
     expect(closed.status, 'closed');
@@ -246,12 +273,14 @@ void main() {
       actor: owner,
       supplier: sup,
       lines: [
-        PurchaseLine(m,
-            quantityBoxes: 10,
-            bonusBoxes: 2,
-            costUsdPerBox: 1.2,
-            expiryDate: DateTime(DateTime.now().year + 2),
-            newPriceUsd: 2.5),
+        PurchaseLine(
+          m,
+          quantityBoxes: 10,
+          bonusBoxes: 2,
+          costUsdPerBox: 1.2,
+          expiryDate: DateTime(DateTime.now().year + 2),
+          newPriceUsd: 2.5,
+        ),
       ],
       paidAmount: 4,
       paidCurrency: currencyUsd,
@@ -282,7 +311,10 @@ void main() {
     expect(short.length, 2);
     expect(
       () => s.inventory.saveMedicine(
-          actor: pharmacist, existing: a, data: const MedicinesCompanion(priceUsd: Value(3))),
+        actor: pharmacist,
+        existing: a,
+        data: const MedicinesCompanion(priceUsd: Value(3)),
+      ),
       throwsA(isA<PermissionDenied>()),
     );
     final logs = await s.audit.list();
@@ -297,11 +329,12 @@ void main() {
   test('license sign and verify', () async {
     final (seed, pub) = await generateKeyPair();
     final data = LicenseData(
-        machineId: 'AAAA-BBBB-CCCC-DDDD-EEEE',
-        customer: 'صيدلية الشفاء',
-        type: 'lifetime',
-        issuedAt: DateTime(2026, 1, 1),
-        serial: '1');
+      machineId: 'AAAA-BBBB-CCCC-DDDD-EEEE',
+      customer: 'صيدلية الشفاء',
+      type: 'lifetime',
+      issuedAt: DateTime(2026, 1, 1),
+      serial: '1',
+    );
     final lic = await signLicense(data, seed);
     final v = await verifyLicense(lic, pub);
     expect(v, isNotNull);

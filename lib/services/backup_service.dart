@@ -93,11 +93,7 @@ class BackupService {
 
   Future<List<File>> localBackups() async {
     if (!await localBackupDir.exists()) return [];
-    final files = await localBackupDir
-        .list()
-        .where((e) => e is File && e.path.endsWith('.phdb'))
-        .cast<File>()
-        .toList();
+    final files = await localBackupDir.list().where((e) => e is File && e.path.endsWith('.phdb')).cast<File>().toList();
     files.sort((a, b) => b.path.compareTo(a.path));
     return files;
   }

@@ -83,35 +83,42 @@ class ReturnsService {
       // الدين المتبقي على هذه الفاتورة
       double debtReduce = 0;
       if (sale.customerId != null && sale.debtSyp > 0) {
-        final already = await db.customSelect(
-          'SELECT COALESCE(SUM(debt_reduced_syp),0) AS s FROM customer_returns WHERE sale_id = ?',
-          variables: [Variable.withInt(sale.id)],
-          readsFrom: {db.customerReturns},
-        ).getSingle();
+        final already = await db
+            .customSelect(
+              'SELECT COALESCE(SUM(debt_reduced_syp),0) AS s FROM customer_returns WHERE sale_id = ?',
+              variables: [Variable.withInt(sale.id)],
+              readsFrom: {db.customerReturns},
+            )
+            .getSingle();
         final remainingDebt = sale.debtSyp - already.read<double>('s');
         debtReduce = remainingDebt > 0 ? (total < remainingDebt ? total : remainingDebt) : 0;
       }
       final refund = roundTo(total - debtReduce, 2);
 
-      final rid = await db.into(db.customerReturns).insert(CustomerReturnsCompanion.insert(
-            saleId: sale.id,
-            customerId: Value(sale.customerId),
-            shiftId: shift.id,
-            userId: actor.id,
-            rate: sale.rate,
-            totalSyp: total,
-            refundSyp: Value(refund),
-            debtReducedSyp: Value(roundTo(debtReduce, 2)),
-            note: Value(note),
-          ));
+      final rid = await db
+          .into(db.customerReturns)
+          .insert(
+            CustomerReturnsCompanion.insert(
+              saleId: sale.id,
+              customerId: Value(sale.customerId),
+              shiftId: shift.id,
+              userId: actor.id,
+              rate: sale.rate,
+              totalSyp: total,
+              refundSyp: Value(refund),
+              debtReducedSyp: Value(roundTo(debtReduce, 2)),
+              note: Value(note),
+            ),
+          );
 
       for (final (l, base, amount) in prepared) {
         // إرجاع الكمية للدفعات الأصلية
         var remaining = base;
-        final allocs = await (db.select(db.saleItemBatches)
-              ..where((t) => t.saleItemId.equals(l.item.id))
-              ..orderBy([(t) => OrderingTerm.desc(t.id)]))
-            .get();
+        final allocs =
+            await (db.select(db.saleItemBatches)
+                  ..where((t) => t.saleItemId.equals(l.item.id))
+                  ..orderBy([(t) => OrderingTerm.desc(t.id)]))
+                .get();
         for (final a in allocs) {
           if (remaining <= 0) break;
           final can = a.baseQuantity - a.returnedBase;
@@ -119,8 +126,9 @@ class ReturnsService {
           final take = can < remaining ? can : remaining;
           if (l.restock) await inventory.changeBatchQty(a.batchId, take);
           cost += a.costUsd * take / a.baseQuantity;
-          await (db.update(db.saleItemBatches)..where((t) => t.id.equals(a.id)))
-              .write(SaleItemBatchesCompanion(returnedBase: Value(a.returnedBase + take)));
+          await (db.update(db.saleItemBatches)..where((t) => t.id.equals(a.id))).write(
+            SaleItemBatchesCompanion(returnedBase: Value(a.returnedBase + take)),
+          );
           remaining -= take;
         }
         await db.customUpdate(
@@ -128,17 +136,22 @@ class ReturnsService {
           variables: [Variable.withInt(base), Variable.withInt(l.item.id)],
           updates: {db.saleItems},
         );
-        await db.into(db.customerReturnItems).insert(CustomerReturnItemsCompanion.insert(
-              returnId: rid,
-              saleItemId: l.item.id,
-              medicineId: l.item.medicineId,
-              baseQuantity: base,
-              amountSyp: amount,
-              restocked: Value(l.restock),
-            ));
+        await db
+            .into(db.customerReturnItems)
+            .insert(
+              CustomerReturnItemsCompanion.insert(
+                returnId: rid,
+                saleItemId: l.item.id,
+                medicineId: l.item.medicineId,
+                baseQuantity: base,
+                amountSyp: amount,
+                restocked: Value(l.restock),
+              ),
+            );
       }
-      await (db.update(db.customerReturns)..where((t) => t.id.equals(rid)))
-          .write(CustomerReturnsCompanion(costUsd: Value(roundTo(cost, 6))));
+      await (db.update(
+        db.customerReturns,
+      )..where((t) => t.id.equals(rid))).write(CustomerReturnsCompanion(costUsd: Value(roundTo(cost, 6))));
 
       if (refund > 0) {
         await shifts.addMovementRaw(shift.id, actor.id, CashTypes.refund, currencySyp, -refund, refId: rid);
@@ -157,10 +170,13 @@ class ReturnsService {
           note: 'مرتجع على فاتورة ${sale.id}',
         );
       }
-      await audit.log(actor, AuditActions.customerReturn,
-          entity: 'sale',
-          entityId: sale.id,
-          details: {'total': total, 'refund': refund, 'debtReduced': debtReduce});
+      await audit.log(
+        actor,
+        AuditActions.customerReturn,
+        entity: 'sale',
+        entityId: sale.id,
+        details: {'total': total, 'refund': refund, 'debtReduced': debtReduce},
+      );
       return rid;
     });
     return (db.select(db.customerReturns)..where((t) => t.id.equals(id))).getSingle();
@@ -193,22 +209,30 @@ class ReturnsService {
         total += l.amountUsd;
       }
       total = roundTo(total, 4);
-      final rid = await db.into(db.supplierReturns).insert(SupplierReturnsCompanion.insert(
-            supplierId: supplier.id,
-            userId: Value(actor.id),
-            totalUsd: total,
-            settlement: settlement,
-            note: Value(note),
-          ));
+      final rid = await db
+          .into(db.supplierReturns)
+          .insert(
+            SupplierReturnsCompanion.insert(
+              supplierId: supplier.id,
+              userId: Value(actor.id),
+              totalUsd: total,
+              settlement: settlement,
+              note: Value(note),
+            ),
+          );
       for (final l in valid) {
         await inventory.changeBatchQty(l.batch.id, -l.baseQuantity);
-        await db.into(db.supplierReturnItems).insert(SupplierReturnItemsCompanion.insert(
-              returnId: rid,
-              batchId: l.batch.id,
-              medicineId: l.medicine.id,
-              baseQuantity: l.baseQuantity,
-              amountUsd: l.amountUsd,
-            ));
+        await db
+            .into(db.supplierReturnItems)
+            .insert(
+              SupplierReturnItemsCompanion.insert(
+                returnId: rid,
+                batchId: l.batch.id,
+                medicineId: l.medicine.id,
+                baseQuantity: l.baseQuantity,
+                amountUsd: l.amountUsd,
+              ),
+            );
       }
       if (settlement == 'credit') {
         await suppliers.addTransaction(
@@ -222,13 +246,23 @@ class ReturnsService {
         );
       } else {
         final amount = cashCurrency == currencyUsd ? total : usdToSyp(total, rate, const RoundingConfig(step: 1));
-        await shifts.addMovementRaw(shift!.id, actor.id, CashTypes.supplierReturn, cashCurrency, amount,
-            refId: rid, note: supplier.name);
+        await shifts.addMovementRaw(
+          shift!.id,
+          actor.id,
+          CashTypes.supplierReturn,
+          cashCurrency,
+          amount,
+          refId: rid,
+          note: supplier.name,
+        );
       }
-      await audit.log(actor, AuditActions.supplierReturn,
-          entity: 'supplier',
-          entityId: supplier.id,
-          details: {'name': supplier.name, 'totalUsd': total, 'settlement': settlement});
+      await audit.log(
+        actor,
+        AuditActions.supplierReturn,
+        entity: 'supplier',
+        entityId: supplier.id,
+        details: {'name': supplier.name, 'totalUsd': total, 'settlement': settlement},
+      );
       return rid;
     });
     return (db.select(db.supplierReturns)..where((t) => t.id.equals(id))).getSingle();

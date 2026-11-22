@@ -1,0 +1,66 @@
+# بناء البرنامج وملف التنصيب لـ Windows تلقائياً على GitHub
+# - عند كل push: تشغيل الاختبارات
+# - عند إنشاء tag يبدأ بـ v (مثلاً v1.0.0) أو التشغيل اليدوي: بناء ملف التنصيب ورفعه كـ Artifact
+name: Build Windows
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.1
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+
+  windows:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.1
+          cache: true
+      - name: Version
+        id: ver
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "v=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT; else echo "v=0.0.${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT; fi
+      - run: flutter pub get
+      - name: Build (obfuscated)
+        run: flutter build windows --release --obfuscate --split-debug-info=build/symbols --build-name=${{ steps.ver.outputs.v }}
+      - name: Bundle Visual C++ runtime
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force installer/vcruntime | Out-Null
+          foreach ($f in 'msvcp140.dll','vcruntime140.dll','vcruntime140_1.dll') {
+            Copy-Item "$env:SystemRoot\System32\$f" installer/vcruntime/
+          }
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+      - name: Build installer
+        shell: pwsh
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DAppVersion=${{ steps.ver.outputs.v }} installer\pharmacy_setup.iss'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PharmacyManager-Setup-${{ steps.ver.outputs.v }}
+          path: build/installer/*.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols-${{ steps.ver.outputs.v }}
+          path: build/symbols

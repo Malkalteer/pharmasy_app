@@ -10,7 +10,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppState.I.init();
   // بيانات تجريبية للعرض فقط: PHARMACY_DEMO=1
-  if (Platform.environment['PHARMACY_DEMO'] == '1' && AppState.I.startupError == null) {
+  if (Platform.environment['PHARMACY_DEMO']?.trim() == '1' && AppState.I.startupError == null) {
     await seedDemo(AppState.I.s);
     await AppState.I.s.settings.load();
   }

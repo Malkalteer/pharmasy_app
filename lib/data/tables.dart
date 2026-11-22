@@ -76,8 +76,7 @@ class Medicines extends Table {
 
   /// الحد الأدنى للمخزون بالعلب
   RealColumn get minStockBoxes => real().withDefault(const Constant(0))();
-  BoolColumn get requiresPrescription =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get requiresPrescription => boolean().withDefault(const Constant(false))();
   BoolColumn get active => boolean().withDefault(const Constant(true))();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();

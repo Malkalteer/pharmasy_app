@@ -24,10 +24,7 @@ const rolePharmacist = 'pharmacist';
 String roleLabel(String role) => role == roleOwner ? 'مالك' : 'صيدلي';
 
 /// الصلاحيات الافتراضية للصيدلي الجديد
-const defaultPharmacistPermissions = {
-  Permission.returns,
-  Permission.manageCustomers,
-};
+const defaultPharmacistPermissions = {Permission.returns, Permission.manageCustomers};
 
 extension UserPermissions on User {
   bool get isOwner => role == roleOwner;
@@ -42,17 +39,14 @@ extension UserPermissions on User {
   bool can(Permission p) => isOwner || permissionSet.contains(p);
 }
 
-String encodePermissions(Iterable<Permission> ps) =>
-    ps.map((p) => p.name).join(',');
+String encodePermissions(Iterable<Permission> ps) => ps.map((p) => p.name).join(',');
 
 class PermissionDenied implements Exception {
   final Permission? permission;
   PermissionDenied([this.permission]);
 
   @override
-  String toString() => permission == null
-      ? 'هذه العملية متاحة للمالك فقط'
-      : 'ليس لديك صلاحية: ${permission!.label}';
+  String toString() => permission == null ? 'هذه العملية متاحة للمالك فقط' : 'ليس لديك صلاحية: ${permission!.label}';
 }
 
 /// خطأ في منطق العمل يُعرض للمستخدم كما هو

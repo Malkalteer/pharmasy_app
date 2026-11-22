@@ -73,52 +73,99 @@ class _SetupScreenState extends State<SetupScreen> {
             child: Card(
               child: Padding(
                 padding: const EdgeInsets.all(28),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  const Icon(Icons.local_pharmacy, size: 56, color: kPrimary),
-                  const SizedBox(height: 8),
-                  const Text('مرحباً بك! إعداد الصيدلية لأول مرة',
-                      textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 24),
-                  const Text('بيانات الصيدلية', style: TextStyle(fontWeight: FontWeight.bold, color: kPrimary)),
-                  const SizedBox(height: 8),
-                  TextField(controller: _pharmacy, decoration: const InputDecoration(labelText: 'اسم الصيدلية *')),
-                  const SizedBox(height: 10),
-                  Row(children: [
-                    Expanded(child: TextField(controller: _address, decoration: const InputDecoration(labelText: 'العنوان'))),
-                    const SizedBox(width: 10),
-                    Expanded(child: TextField(controller: _phone, decoration: const InputDecoration(labelText: 'الهاتف'))),
-                  ]),
-                  const SizedBox(height: 20),
-                  const Text('حساب المالك (المدير)', style: TextStyle(fontWeight: FontWeight.bold, color: kPrimary)),
-                  const SizedBox(height: 8),
-                  Row(children: [
-                    Expanded(child: TextField(controller: _name, decoration: const InputDecoration(labelText: 'الاسم الكامل *'))),
-                    const SizedBox(width: 10),
-                    Expanded(
-                        child: TextField(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Icon(Icons.local_pharmacy, size: 56, color: kPrimary),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'مرحباً بك! إعداد الصيدلية لأول مرة',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'بيانات الصيدلية',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: kPrimary),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _pharmacy,
+                      decoration: const InputDecoration(labelText: 'اسم الصيدلية *'),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _address,
+                            decoration: const InputDecoration(labelText: 'العنوان'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _phone,
+                            decoration: const InputDecoration(labelText: 'الهاتف'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'حساب المالك (المدير)',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: kPrimary),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _name,
+                            decoration: const InputDecoration(labelText: 'الاسم الكامل *'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
                             controller: _user,
                             textDirection: TextDirection.ltr,
-                            decoration: const InputDecoration(labelText: 'اسم المستخدم *'))),
-                  ]),
-                  const SizedBox(height: 10),
-                  Row(children: [
-                    Expanded(
-                        child: TextField(
-                            controller: _pass, obscureText: true, decoration: const InputDecoration(labelText: 'كلمة المرور *'))),
-                    const SizedBox(width: 10),
-                    Expanded(
-                        child: TextField(
+                            decoration: const InputDecoration(labelText: 'اسم المستخدم *'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _pass,
+                            obscureText: true,
+                            decoration: const InputDecoration(labelText: 'كلمة المرور *'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
                             controller: _pass2,
                             obscureText: true,
-                            decoration: const InputDecoration(labelText: 'تأكيد كلمة المرور *'))),
-                  ]),
-                  const SizedBox(height: 20),
-                  const Text('سعر الصرف', style: TextStyle(fontWeight: FontWeight.bold, color: kPrimary)),
-                  const SizedBox(height: 8),
-                  NumField(controller: _rate, label: 'سعر الدولار بالليرة السورية *', suffix: 'ل.س'),
-                  const SizedBox(height: 24),
-                  FilledButton(onPressed: _busy ? null : _save, child: const Text('حفظ والبدء')),
-                ]),
+                            decoration: const InputDecoration(labelText: 'تأكيد كلمة المرور *'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'سعر الصرف',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: kPrimary),
+                    ),
+                    const SizedBox(height: 8),
+                    NumField(controller: _rate, label: 'سعر الدولار بالليرة السورية *', suffix: 'ل.س'),
+                    const SizedBox(height: 24),
+                    FilledButton(onPressed: _busy ? null : _save, child: const Text('حفظ والبدء')),
+                  ],
+                ),
               ),
             ),
           ),
