@@ -112,11 +112,16 @@ git push origin v1.0.0
 سيبني GitHub Actions ملف `PharmacyManager-Setup-1.0.0.exe` وتجده في صفحة **Actions ← Artifacts**. يمكن أيضاً تشغيله يدوياً من Actions ← Build Windows ← Run workflow.
 
 ### الطريقة 2: على جهاز Windows
-المتطلبات: [Flutter](https://docs.flutter.dev/get-started/install/windows/desktop)، و Visual Studio 2022 (مع "Desktop development with C++")، و [Inno Setup 6](https://jrsoftware.org/isdl.php).
+المتطلبات: [Flutter](https://docs.flutter.dev/get-started/install/windows/desktop)، و Visual Studio (مع "Desktop development with C++")، و [NSIS 3](https://nsis.sourceforge.io/Download) (مجاني حتى للاستخدام التجاري).
 ```bat
 installer\build_installer.bat 1.0.0
 ```
 الناتج: `build\installer\PharmacyManager-Setup-1.0.0.exe`
+
+إذا كان البرنامج مبنياً مسبقاً وتريد إعادة صنع ملف التنصيب فقط:
+```bat
+installer\build_installer.bat 1.0.0 skipbuild
+```
 
 > لا تنسَ تشغيل `keygen` ورفع `public_key.dart` **قبل** بناء النسخة التي ستبيعها.
 
@@ -154,7 +159,7 @@ lib/
   printing/    الفواتير والتقارير (PDF عربي)
   ui/          الواجهات (عربي، من اليمين لليسار)
 tool/          أداة توليد التراخيص
-installer/     ملف Inno Setup وسكربت البناء
+installer/     ملف التنصيب (NSIS) وسكربت البناء
 test/          اختبارات منطق العمل والطباعة
 ```
 

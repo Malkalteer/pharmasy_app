@@ -1,6 +1,6 @@
 @echo off
 REM Build the app and the installer on Windows
-REM Requirements: Flutter SDK + Visual Studio 2022 (Desktop development with C++) + Inno Setup 6 or 7
+REM Requirements: Flutter SDK + Visual Studio (Desktop development with C++) + NSIS 3 (free, also for commercial use)
 setlocal
 cd /d "%~dp0\.."
 
@@ -29,20 +29,21 @@ copy /Y %SystemRoot%\System32\msvcp140.dll installer\vcruntime\ >nul
 copy /Y %SystemRoot%\System32\vcruntime140.dll installer\vcruntime\ >nul
 copy /Y %SystemRoot%\System32\vcruntime140_1.dll installer\vcruntime\ >nul
 
-echo === [4/4] Creating installer ===
-set "ISCC="
-for %%P in ("%ProgramFiles%\Inno Setup 7\ISCC.exe" "%ProgramFiles(x86)%\Inno Setup 7\ISCC.exe" "%LOCALAPPDATA%\Programs\Inno Setup 7\ISCC.exe" "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" "%ProgramFiles%\Inno Setup 6\ISCC.exe" "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe") do (
-  if not defined ISCC if exist %%P set "ISCC=%%~P"
+echo === [4/4] Creating installer (NSIS) ===
+set "MAKENSIS="
+for %%P in ("%ProgramFiles(x86)%\NSIS\makensis.exe" "%ProgramFiles%\NSIS\makensis.exe" "%LOCALAPPDATA%\Programs\NSIS\makensis.exe") do (
+  if not defined MAKENSIS if exist %%P set "MAKENSIS=%%~P"
 )
-if not defined ISCC for /f "delims=" %%I in ('where ISCC.exe 2^>nul') do if not defined ISCC set "ISCC=%%I"
-if not defined ISCC (
+if not defined MAKENSIS for /f "delims=" %%I in ('where makensis.exe 2^>nul') do if not defined MAKENSIS set "MAKENSIS=%%I"
+if not defined MAKENSIS (
   echo.
-  echo ERROR: Inno Setup was not found.
-  echo Install it from https://jrsoftware.org/isdl.php then run this script again.
+  echo ERROR: NSIS was not found.
+  echo Install it from https://nsis.sourceforge.io/Download then run this script again.
   goto :error
 )
-echo Using: "%ISCC%"
-"%ISCC%" /DAppVersion=%VERSION% installer\pharmacy_setup.iss || goto :error
+echo Using: "%MAKENSIS%"
+if not exist build\installer mkdir build\installer
+"%MAKENSIS%" /V2 /DAPP_VERSION=%VERSION% installer\pharmacy_setup.nsi || goto :error
 
 echo.
 echo Done! Installer: build\installer\PharmacyManager-Setup-%VERSION%.exe
